@@ -21,7 +21,6 @@ class _MainScreenState extends State<MainScreen> {
     _requestPermission();
   }
 
-  // 위치 권한 요청 및 현재 위치 가져오기
   Future<void> _requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -37,7 +36,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  // 현재 위치를 가져와 지도 중심 이동
   Future<void> _updateLocation() async {
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
@@ -47,20 +45,21 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: _buildDrawer(), // ✅ 좌측 메뉴 추가
       body: Stack(
         children: [
           // 지도 (FlutterMap)
           FlutterMap(
-            mapController: _mapController, // 지도 컨트롤러 추가
+            mapController: _mapController,
             options: const MapOptions(
-              initialZoom: 17.1,
+              initialZoom: 17,
               initialCenter: LatLng(36.77203, 126.9316),
             ),
             children: [
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
               ),
-              if (_locationPermissionGranted) // 위치 권한이 허용된 경우만 표시
+              if (_locationPermissionGranted)
                 CurrentLocationLayer(
                   style: LocationMarkerStyle(
                     showAccuracyCircle: false,
@@ -100,18 +99,91 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // 햄버거 메뉴 버튼
+  // ✅ 햄버거 버튼 (Builder로 감싸서 context 오류 해결)
   Widget _buildMenuButton() {
-    return IconButton(
-      icon: const Icon(Icons.menu, size: 30, color: Colors.white),
-      onPressed: () {
-        print("메뉴 버튼 클릭됨");
+    return Builder(
+      builder: (context) {
+        return IconButton(
+          icon: const Icon(Icons.menu, size: 30, color: Colors.white),
+          onPressed: () {
+            Scaffold.of(context).openDrawer(); // ✅ Drawer 열기
+          },
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.all(Colors.blue),
+            shape: WidgetStateProperty.all(const CircleBorder()),
+            padding: WidgetStateProperty.all(const EdgeInsets.all(10)),
+          ),
+        );
       },
-      style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.all(Colors.blue),
-        shape: WidgetStateProperty.all(const CircleBorder()),
-        padding: WidgetStateProperty.all(const EdgeInsets.all(10)),
+    );
+  }
+
+  // ✅ Drawer (좌측 메뉴)
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          _buildDrawerHeader(),
+          _buildDrawerMenuItem(Icons.history, "이용 내역"),
+          _buildDrawerMenuItem(Icons.info, "이용 안내"),
+          _buildDrawerMenuItem(Icons.headset_mic, "고객센터"),
+        ],
       ),
+    );
+  }
+
+  // ✅ Drawer 상단 프로필 영역 (정렬 및 디자인 개선)
+  Widget _buildDrawerHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      color: Colors.white,
+      child: Row(
+        children: [
+          // 프로필 이미지
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.grey[300],
+            child: const Icon(Icons.person, size: 40, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+
+          // 사용자 정보
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "김이박",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "kimyee123",
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+
+          // 프로필 수정 아이콘 (">")
+          const Icon(Icons.chevron_right, size: 30, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Drawer 메뉴 리스트 스타일 개선
+  Widget _buildDrawerMenuItem(IconData icon, String title) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.grey[700]),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+      onTap: () {
+        print("$title 클릭됨");
+        Navigator.pop(context);
+      },
     );
   }
 

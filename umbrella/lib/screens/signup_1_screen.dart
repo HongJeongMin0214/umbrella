@@ -10,7 +10,7 @@ class Signup1Screen extends StatefulWidget {
 
 class _Signup1ScreenState extends State<Signup1Screen> {
   final TextEditingController _emailController = TextEditingController();
-  final RegExp emailRegex = RegExp(r'^\d{8}@sch\.ac\.kr$');
+  final RegExp emailRegex = RegExp(r'.+@sch\.ac\.kr$'); // ✅ 허용되는 이메일 형식 변경
 
   void _validateAndProceed() {
     if (!emailRegex.hasMatch(_emailController.text)) {
