@@ -53,7 +53,7 @@ class _MainScreenState extends State<MainScreen> {
           FlutterMap(
             mapController: _mapController, // 지도 컨트롤러 추가
             options: const MapOptions(
-              initialZoom: 17,
+              initialZoom: 17.1,
               initialCenter: LatLng(36.77203, 126.9316),
             ),
             children: [
