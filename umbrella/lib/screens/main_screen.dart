@@ -53,6 +53,8 @@ class _MainScreenState extends State<MainScreen> {
             mapController: _mapController,
             options: const MapOptions(
               initialZoom: 17,
+              minZoom: 13,
+              maxZoom: 18,
               initialCenter: LatLng(36.77203, 126.9316),
               interactionOptions: InteractionOptions(
                 flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
@@ -79,7 +81,7 @@ class _MainScreenState extends State<MainScreen> {
                     context: context,
                     shape: const RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(16)),
+                          BorderRadius.vertical(top: Radius.circular(30)),
                     ),
                     builder: (context) => Container(
                       padding: const EdgeInsets.all(20),
@@ -87,7 +89,7 @@ class _MainScreenState extends State<MainScreen> {
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(16)),
+                            BorderRadius.vertical(top: Radius.circular(30)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -131,7 +133,7 @@ class _MainScreenState extends State<MainScreen> {
                                       "4",
                                       style: TextStyle(
                                           fontSize: 40,
-                                          color: Colors.blue,
+                                          color: Color(0xFF0061FF),
                                           fontWeight: FontWeight.w100),
                                     ),
                                     Text(
@@ -156,7 +158,7 @@ class _MainScreenState extends State<MainScreen> {
                                       "6",
                                       style: TextStyle(
                                           fontSize: 40,
-                                          color: Colors.red,
+                                          color: Color(0xFFFF0000),
                                           fontWeight: FontWeight.w100),
                                     ),
                                     Text(
@@ -176,18 +178,109 @@ class _MainScreenState extends State<MainScreen> {
                             height: 40,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
+                                backgroundColor: const Color(0xFF00B2FF),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(40),
                                 ),
                               ),
                               onPressed: () {
                                 print("이용하기 버튼 클릭됨");
+                                showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor:
+                                      Colors.transparent, // ✅ 바텀시트의 배경을 투명하게 설정
+                                  isScrollControlled: true, // ✅ 바텀시트 크기 조절 가능
+                                  builder: (context) {
+                                    return Container(
+                                      margin: const EdgeInsets.all(12),
+                                      height: 450,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(
+                                            20), // ✅ 둥근 모서리
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const SizedBox(height: 45),
+                                          const Text(
+                                            "NFC 태그",
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          // ✅ NFC 아이콘
+                                          Container(
+                                            padding: const EdgeInsets.all(20),
+                                            decoration: BoxDecoration(
+                                              color: Colors
+                                                  .transparent, // ✅ 아이콘 배경색
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const SizedBox(
+                                                  width: 40,
+                                                ),
+                                                Image.asset(
+                                                  'lib/assets/tag.png',
+                                                  width: 160,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          // ✅ 설명 텍스트
+                                          const Text(
+                                            "휴대전화의 뒷면을 카드 리더기에 대세요.",
+                                            style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.black),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          // ✅ 취소 버튼
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                40, 0, 40, 0),
+                                            child: SizedBox(
+                                              width: double.infinity,
+                                              height: 40,
+                                              child: TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context), // ✅ 바텀시트 닫기
+                                                style: TextButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.grey[300],
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                                child: const Text("취소",
+                                                    style: TextStyle(
+                                                        color: Colors.black)),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
                               },
                               child: const Text(
                                 "이용하기",
                                 style: TextStyle(
-                                    fontSize: 16, color: Colors.white),
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
@@ -210,23 +303,25 @@ class _MainScreenState extends State<MainScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 1),
                             decoration: BoxDecoration(
-                              color: Colors.blue,
+                              color: const Color(0xFF26539C),
                               borderRadius: BorderRadius.circular(20), // 둥근 모서리
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.water_drop,
-                                    color: Colors.white, size: 14), // 우산 아이콘
-                                SizedBox(width: 3),
-                                Text(
+                                Image.asset(
+                                  'lib/assets/umbrella.png',
+                                  width: 12,
+                                ),
+                                const SizedBox(width: 3),
+                                const Text(
                                   "4", // 숫자
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
-                                      fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.w400),
                                 ),
-                                SizedBox(width: 2)
+                                const SizedBox(width: 2)
                               ],
                             ),
                           ),
@@ -238,7 +333,7 @@ class _MainScreenState extends State<MainScreen> {
                               child: Container(
                                 width: 10,
                                 height: 10,
-                                color: Colors.blue, // 삼각형과 같은 색상
+                                color: const Color(0xFF26539C), // 삼각형과 같은 색상
                               ),
                             ),
                           ),
@@ -259,7 +354,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           Positioned(
             top: 40,
-            left: MediaQuery.of(context).size.width / 2 - 80,
+            left: MediaQuery.of(context).size.width / 2 - 120,
             child: _buildTopContainer(),
           ),
           Positioned(
@@ -268,7 +363,7 @@ class _MainScreenState extends State<MainScreen> {
             child: _buildSearchButton(),
           ),
           Positioned(
-            bottom: 100,
+            bottom: 30,
             right: 16,
             child: _buildFloatingButtons(),
           ),
@@ -287,7 +382,7 @@ class _MainScreenState extends State<MainScreen> {
             Scaffold.of(context).openDrawer(); // ✅ Drawer 열기
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(Colors.blue),
+            backgroundColor: WidgetStateProperty.all(const Color(0xFF26539C)),
             shape: WidgetStateProperty.all(const CircleBorder()),
             padding: WidgetStateProperty.all(const EdgeInsets.all(10)),
           ),
@@ -299,12 +394,25 @@ class _MainScreenState extends State<MainScreen> {
   // ✅ Drawer (좌측 메뉴)
   Widget _buildDrawer() {
     return Drawer(
+      backgroundColor: Colors.white,
       child: Column(
         children: [
           _buildDrawerHeader(),
           _buildDrawerMenuItem(Icons.history, "이용 내역"),
-          _buildDrawerMenuItem(Icons.info, "이용 안내"),
+          Container(
+            color: const Color.fromARGB(255, 173, 173, 173),
+            height: 0.7,
+          ),
+          _buildDrawerMenuItem(Icons.info_outline, "이용 안내"),
+          Container(
+            color: const Color.fromARGB(255, 173, 173, 173),
+            height: 0.7,
+          ),
           _buildDrawerMenuItem(Icons.headset_mic, "고객센터"),
+          Container(
+            color: const Color.fromARGB(255, 173, 173, 173),
+            height: 0.7,
+          ),
         ],
       ),
     );
@@ -313,7 +421,7 @@ class _MainScreenState extends State<MainScreen> {
   // ✅ Drawer 상단 프로필 영역 (정렬 및 디자인 개선)
   Widget _buildDrawerHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
       color: Colors.white,
       child: Row(
         children: [
@@ -326,25 +434,30 @@ class _MainScreenState extends State<MainScreen> {
           const SizedBox(width: 16),
 
           // 사용자 정보
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "김이박",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "kimyee123",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    "김사물",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "iotkim1004",
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                width: 10,
+              )
+            ],
           ),
 
           // 프로필 수정 아이콘 (">")
-          const Icon(Icons.chevron_right, size: 30, color: Colors.grey),
+          const Icon(Icons.chevron_right,
+              size: 30, color: Color.fromARGB(255, 67, 67, 67)),
         ],
       ),
     );
@@ -356,10 +469,11 @@ class _MainScreenState extends State<MainScreen> {
       leading: Icon(icon, color: Colors.grey[700]),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
       ),
       onTap: () {
         print("$title 클릭됨");
+
         Navigator.pop(context);
       },
     );
@@ -368,12 +482,13 @@ class _MainScreenState extends State<MainScreen> {
   // 상단 중앙 컨테이너 (곡률 있음)
   Widget _buildTopContainer() {
     return Container(
-      width: 160,
-      height: 40,
+      width: 240,
+      height: 50,
       decoration: BoxDecoration(
-        color: Colors.blue,
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFF26539C),
+        borderRadius: BorderRadius.circular(30),
       ),
+      child: Image.asset('lib/assets/nii_nae.jpg'),
     );
   }
 
@@ -385,7 +500,7 @@ class _MainScreenState extends State<MainScreen> {
         print("검색 버튼 클릭됨");
       },
       style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.all(Colors.blue),
+        backgroundColor: WidgetStateProperty.all(const Color(0xFF26539C)),
         shape: WidgetStateProperty.all(const CircleBorder()),
         padding: WidgetStateProperty.all(const EdgeInsets.all(10)),
       ),
@@ -396,9 +511,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildFloatingButtons() {
     return Column(
       children: [
-        _buildRoundIconButton(Icons.wb_sunny, "날씨"),
+        _buildRoundIconButton(Icons.cloud, "날씨"),
         const SizedBox(height: 10),
-        _buildRoundIconButton(Icons.attach_file, "클립"),
+        _buildRoundIconButton(Icons.wifi_tethering_error_rounded, "클립"),
         const SizedBox(height: 10),
         _buildRoundIconButton(Icons.my_location, "좌표"),
       ],
@@ -407,16 +522,176 @@ class _MainScreenState extends State<MainScreen> {
 
   // 공통 아이콘 버튼 스타일
   Widget _buildRoundIconButton(IconData icon, String label) {
-    return FloatingActionButton(
-      heroTag: label,
-      onPressed: () {
-        print("$label 버튼 클릭됨");
-        if (label == "좌표") {
-          _updateLocation(); // 좌표 버튼 클릭 시 현재 위치로 이동
-        }
-      },
-      backgroundColor: Colors.blue,
-      child: Icon(icon, color: Colors.white),
+    return Container(
+      width: 50,
+      height: 50,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
+      child: FloatingActionButton(
+        heroTag: label,
+        onPressed: () {
+          print("$label 버튼 클릭됨");
+          if (label == "좌표") {
+            _updateLocation(); // 좌표 버튼 클릭 시 현재 위치로 이동
+          }
+        },
+        backgroundColor: const Color(0xFF5075AF),
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
+}
+
+void showOnboardingDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return const OnboardingPopup();
+    },
+  );
+}
+
+class OnboardingPopup extends StatefulWidget {
+  const OnboardingPopup({super.key});
+
+  @override
+  _OnboardingPopupState createState() => _OnboardingPopupState();
+}
+
+class _OnboardingPopupState extends State<OnboardingPopup> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  final List<Map<String, String>> _pages = [
+    {
+      "title": "어떻게 대여/반납하나요?",
+      "image": "assets/images/step1.png", // 이미지 경로
+      "description": "지도에서 반납할 보관함 위치를 확인하세요."
+    },
+    {
+      "title": "어떻게 대여/반납하나요?",
+      "image": "assets/images/step2.png",
+      "description": "또는, 반납할 보관함을 검색하세요."
+    },
+    {
+      "title": "어떻게 대여/반납하나요?",
+      "image": "assets/images/step3.png",
+      "description": "이용하기 버튼을 누르고, 우산을 NFC 리더기에 가져다 대세요."
+    },
+    {
+      "title": "우산을 분실하셨나요?",
+      "image": "assets/images/step4.png",
+      "description": "연결이 끊긴 위치에 도착하면, 해당 버튼을 클릭해 내 우산 찾기를 시작해 주세요."
+    },
+    {
+      "title": "반납 기간",
+      "image": "assets/images/step5.png",
+      "description": "대여 후 3일 이내 반납해 주세요. 3일 초과 시 추가 요금이 발생할 수 있습니다."
+    },
+  ];
+
+  void _nextPage() {
+    if (_currentIndex < _pages.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _prevPage() {
+    if (_currentIndex > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20), // ✅ 둥근 모서리
+      ),
+      child: Container(
+        width: 320,
+        height: 450,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _pages.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _pages[index]["title"]!,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Image.asset(_pages[index]["image"]!,
+                          width: 100, height: 100),
+                      const SizedBox(height: 15),
+                      Text(
+                        _pages[index]["description"]!,
+                        textAlign: TextAlign.center,
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _pages.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color:
+                        _currentIndex == index ? Colors.blue : Colors.grey[300],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _prevPage,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward),
+                  onPressed: _nextPage,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -106,7 +106,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: const Text(
                   "로그인",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600),
                 ),
               ),
             ),

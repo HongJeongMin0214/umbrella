@@ -151,7 +151,10 @@ class _Signup2ScreenState extends State<Signup2Screen> {
                 ),
                 child: const Text(
                   "확인",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600),
                 ),
               ),
             ),

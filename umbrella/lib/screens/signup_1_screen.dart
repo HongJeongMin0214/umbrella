@@ -80,7 +80,10 @@ class _Signup1ScreenState extends State<Signup1Screen> {
                 ),
                 child: const Text(
                   "인증번호 전송",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600),
                 ),
               ),
             ),
