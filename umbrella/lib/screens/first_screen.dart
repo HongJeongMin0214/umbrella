@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class FirstScreen extends StatelessWidget {
+class FirstScreen extends StatefulWidget {
   const FirstScreen({super.key});
+
+  @override
+  _FirstScreenState createState() => _FirstScreenState();
+}
+
+class _FirstScreenState extends State<FirstScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  bool _animationFinished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(microseconds: 5940000), // GIF 애니메이션 전체 재생 시간
+    );
+
+    // 애니메이션이 끝나면 상태를 변경하여 마지막 프레임을 보여줌
+    _controller.forward().whenComplete(() {
+      setState(() {
+        _animationFinished = true; // 애니메이션 종료됨
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +45,11 @@ class FirstScreen extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(80, 0, 80, 160),
-              child: Image.asset('lib/assets/first.jpg'),
+              child: _animationFinished
+                  ? Image.asset(
+                      'lib/assets/anim_last_frame.jpg') // 🎯 마지막 프레임 (81프레임)
+                  : Image.asset('lib/assets/anim.gif',
+                      gaplessPlayback: true), // GIF 애니메이션
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 10),
