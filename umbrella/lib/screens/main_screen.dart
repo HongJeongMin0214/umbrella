@@ -54,6 +54,9 @@ class _MainScreenState extends State<MainScreen> {
             options: const MapOptions(
               initialZoom: 17,
               initialCenter: LatLng(36.77203, 126.9316),
+              interactionOptions: InteractionOptions(
+                flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+              ),
             ),
             children: [
               TileLayer(
@@ -70,6 +73,181 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                 ),
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    builder: (context) => Container(
+                      padding: const EdgeInsets.all(20),
+                      height: 230, // 모달 높이 조절 가능
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 상단 바 (모달 핸들)
+                          Container(
+                            width: 50,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 227, 227, 227),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 장소명 & 즐겨찾기 아이콘
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "미디어랩스",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Color.fromARGB(255, 78, 78, 78),
+                                ),
+                              ),
+
+                              // 즐겨찾기 아이콘
+                            ],
+                          ),
+
+                          // 우산 & 빈 슬롯 정보
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 50,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "4",
+                                      style: TextStyle(
+                                          fontSize: 40,
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w100),
+                                    ),
+                                    Text(
+                                      "우산",
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                height: 50,
+                                width: 1,
+                                color: Colors.grey[300],
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 30),
+                              ),
+                              const SizedBox(
+                                width: 50,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "6",
+                                      style: TextStyle(
+                                          fontSize: 40,
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.w100),
+                                    ),
+                                    Text(
+                                      "빈 슬롯",
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 이용하기 버튼
+                          SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(40),
+                                ),
+                              ),
+                              onPressed: () {
+                                print("이용하기 버튼 클릭됨");
+                              },
+                              child: const Text(
+                                "이용하기",
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                child: MarkerLayer(
+                  markers: [
+                    Marker(
+                      width: 60,
+                      height: 60,
+                      point: const LatLng(36.77200, 126.9317),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ✅ 타원형 배경
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(20), // 둥근 모서리
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.water_drop,
+                                    color: Colors.white, size: 14), // 우산 아이콘
+                                SizedBox(width: 3),
+                                Text(
+                                  "4", // 숫자
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(width: 2)
+                              ],
+                            ),
+                          ),
+                          // ✅ 아래 삼각형 (Transform 사용)
+                          Transform.translate(
+                            offset: const Offset(0, -6),
+                            child: Transform.rotate(
+                              angle: 3.14 / 4, // 45도 회전
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                color: Colors.blue, // 삼각형과 같은 색상
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
 
