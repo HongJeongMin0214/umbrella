@@ -85,7 +85,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
           "회원가입",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        centerTitle: false,
         backgroundColor: Colors.white,
         elevation: 0,
       ),

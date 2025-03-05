@@ -50,7 +50,7 @@ class _Signup3ScreenState extends State<Signup3Screen> {
           "회원가입",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        centerTitle: false,
         backgroundColor: Colors.white,
         elevation: 0,
       ),

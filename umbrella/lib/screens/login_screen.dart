@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
           "로그인",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        centerTitle: false,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
