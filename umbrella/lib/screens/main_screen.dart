@@ -473,8 +473,10 @@ class _MainScreenState extends State<MainScreen> {
       ),
       onTap: () {
         print("$title 클릭됨");
-
         Navigator.pop(context);
+        if (title == "이용 안내") {
+          showOnboardingDialog(context);
+        }
       },
     );
   }
@@ -542,156 +544,145 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-void showOnboardingDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return const OnboardingPopup();
-    },
-  );
-}
-
-class OnboardingPopup extends StatefulWidget {
-  const OnboardingPopup({super.key});
-
+class _OnboardingPopup extends StatefulWidget {
   @override
   _OnboardingPopupState createState() => _OnboardingPopupState();
 }
 
-class _OnboardingPopupState extends State<OnboardingPopup> {
-  final PageController _pageController = PageController();
-  int _currentIndex = 0;
+class _OnboardingPopupState extends State<_OnboardingPopup> {
+  int currentIndex = 0; // 현재 페이지 인덱스
+  final int totalPages = 9; // 전체 페이지 수
 
-  final List<Map<String, String>> _pages = [
+  final List<Map<String, String>> onboardingData = [
+    {"title": "어떻게 대여/반납하나요?", "description": "지도에서 반납할 보관함 위치를\n확인하세요."},
+    {"title": "어떻게 대여/반납하나요?", "description": "또는, 반납할 보관함을 검색하세요."},
     {
       "title": "어떻게 대여/반납하나요?",
-      "image": "assets/images/step1.png", // 이미지 경로
-      "description": "지도에서 반납할 보관함 위치를 확인하세요."
+      "description": "이용하기 버튼을 누르고 휴대폰을 보관함\nNFC 리더기에 가져다 대세요."
     },
-    {
-      "title": "어떻게 대여/반납하나요?",
-      "image": "assets/images/step2.png",
-      "description": "또는, 반납할 보관함을 검색하세요."
-    },
-    {
-      "title": "어떻게 대여/반납하나요?",
-      "image": "assets/images/step3.png",
-      "description": "이용하기 버튼을 누르고, 우산을 NFC 리더기에 가져다 대세요."
-    },
+    {"title": "어떻게 대여/반납하나요?", "description": "우산함 화면에 표시된 안내를 따라\n진행해 주세요."},
+    {"title": "우산을 분실하셨나요?", "description": "우산과 연결이 끊긴 지점을\n확인해 주세요."},
     {
       "title": "우산을 분실하셨나요?",
-      "image": "assets/images/step4.png",
-      "description": "연결이 끊긴 위치에 도착하면, 해당 버튼을 클릭해 내 우산 찾기를 시작해 주세요."
+      "description": "우산이 끊긴 위치에 도착하여, 해당 핀을\n터치해 내 우산 찾기를 시작해 주세요."
     },
+    {"title": "서비스 구역 준수", "description": "대여한 우산은 지정된 서비스 구역\n내에서만 사용 가능합니다."},
     {
       "title": "반납 기간",
-      "image": "assets/images/step5.png",
-      "description": "대여 후 3일 이내 반납해 주세요. 3일 초과 시 추가 요금이 발생할 수 있습니다."
+      "description": "대여 후 3일 이내 반납해 주세요. 3일 초과 시\n초과 일수의 2배 요금이 부과됩니다."
+    },
+    {
+      "title": "우산 분실 및 미반납",
+      "description": "우산 분실 시 보증금 10,000원이 부과되며,\n반납하지 않으면 다음 대여가 제한됩니다."
     },
   ];
 
-  void _nextPage() {
-    if (_currentIndex < _pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+  void nextPage() {
+    if (currentIndex < totalPages - 1) {
+      setState(() => currentIndex++);
     }
   }
 
-  void _prevPage() {
-    if (_currentIndex > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+  void prevPage() {
+    if (currentIndex > 0) {
+      setState(() => currentIndex--);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20), // ✅ 둥근 모서리
+    return Container(
+      width: 320,
+      height: 450,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Container(
-        width: 320,
-        height: 450,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _pages.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _pages[index]["title"]!,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Image.asset(_pages[index]["image"]!,
-                          width: 100, height: 100),
-                      const SizedBox(height: 15),
-                      Text(
-                        _pages[index]["description"]!,
-                        textAlign: TextAlign.center,
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _pages.length,
-                (index) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        _currentIndex == index ? Colors.blue : Colors.grey[300],
-                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ✅ 제목
+          Text(
+            onboardingData[currentIndex]["title"]!,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 45),
+
+          // ✅ 중앙 이미지 (사용자가 직접 추가)
+          Image.asset(
+            'lib/assets/icons/${currentIndex + 1}.jpg',
+            width: 170,
+            height: 170,
+            fit: BoxFit.contain,
+          ),
+
+          const SizedBox(height: 15),
+
+          // ✅ 설명 텍스트
+          Text(
+            onboardingData[currentIndex]["description"]!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const Spacer(),
+
+          // ✅ 페이지 인디케이터
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              totalPages,
+              (index) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: index == currentIndex ? Colors.blue : Colors.grey[300],
                 ),
               ),
             ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _prevPage,
-                ),
+          ),
+          const SizedBox(height: 15),
+
+          // ✅ 하단 네비게이션 버튼
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: prevPage,
+                color: currentIndex > 0
+                    ? Colors.black
+                    : Colors.transparent, // 첫 페이지에서는 비활성화 색상
+              ),
+              if (currentIndex < totalPages - 1)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  onPressed: _nextPage,
-                ),
+                  onPressed: nextPage,
+                )
+              else
                 IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(context), // 마지막 페이지에서는 닫기 버튼
                 ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
+}
+
+void showOnboardingDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)), // 둥근 모서리
+        child: _OnboardingPopup(), // ✅ 별도 StatefulWidget으로 분리
+      );
+    },
+  );
 }
