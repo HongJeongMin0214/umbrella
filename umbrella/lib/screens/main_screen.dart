@@ -45,6 +45,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawerEnableOpenDragGesture: false,
       drawer: _buildDrawer(), // ✅ 좌측 메뉴 추가
       body: Stack(
         children: [
