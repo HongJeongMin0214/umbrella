@@ -61,11 +61,10 @@ class _Signup3ScreenState extends State<Signup3Screen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
+      canPop: false, // 기본 뒤로 가기 방지
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          context.go('/'); // ✅ 물리적 뒤로 가기 버튼을 누르면 first_screen으로 이동
-        }
+        if (didPop) return;
+        context.go('/'); // ✅ 첫 화면으로 이동
       },
       child: Scaffold(
         backgroundColor: Colors.white,
