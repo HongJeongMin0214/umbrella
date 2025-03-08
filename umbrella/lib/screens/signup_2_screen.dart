@@ -53,7 +53,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
 
   void _validateCode() {
     if (_codeRegex.hasMatch(_codeController.text)) {
-      context.go('/signup3'); // 인증 성공 시 signup_3_screen.dart로 이동
+      context.push('/signup3'); // 인증 성공 시 signup_3_screen.dart로 이동
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -77,7 +77,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             context.go('/signup');
           },
@@ -91,22 +91,27 @@ class _Signup2ScreenState extends State<Signup2Screen> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _codeController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: "인증번호",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
+            SizedBox(
+              height: 50,
+              child: TextField(
+                controller: _codeController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: "인증번호",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.orange, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.orange, width: 2),
+                  ),
                 ),
               ),
             ),
@@ -138,7 +143,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
                       ],
                     ),
                   ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -147,7 +152,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: const Text(

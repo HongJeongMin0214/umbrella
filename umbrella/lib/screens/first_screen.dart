@@ -5,10 +5,10 @@ class FirstScreen extends StatefulWidget {
   const FirstScreen({super.key});
 
   @override
-  _FirstScreenState createState() => _FirstScreenState();
+  FirstScreenState createState() => FirstScreenState();
 }
 
-class _FirstScreenState extends State<FirstScreen>
+class FirstScreenState extends State<FirstScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   bool _animationFinished = false;
@@ -18,15 +18,18 @@ class _FirstScreenState extends State<FirstScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(microseconds: 5940000), // GIF 애니메이션 전체 재생 시간
+      duration: const Duration(microseconds: 5940000),
     );
 
-    // 애니메이션이 끝나면 상태를 변경하여 마지막 프레임을 보여줌
-    _controller.forward().whenComplete(() {
-      setState(() {
-        _animationFinished = true; // 애니메이션 종료됨
-      });
-    });
+    _controller.forward().whenComplete(
+      () {
+        setState(
+          () {
+            _animationFinished = true;
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -46,16 +49,14 @@ class _FirstScreenState extends State<FirstScreen>
             Padding(
               padding: const EdgeInsets.fromLTRB(80, 0, 80, 160),
               child: _animationFinished
-                  ? Image.asset(
-                      'lib/assets/anim_last_frame.jpg') // 🎯 마지막 프레임 (81프레임)
-                  : Image.asset('lib/assets/anim.gif',
-                      gaplessPlayback: true), // GIF 애니메이션
+                  ? Image.asset('lib/assets/anim_last_frame.jpg')
+                  : Image.asset('lib/assets/anim.gif', gaplessPlayback: true),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 10),
               child: ElevatedButton(
                 onPressed: () {
-                  context.go('/signup'); // 회원가입 페이지 이동
+                  context.push('/signup');
                 },
                 style: ElevatedButton.styleFrom(
                   elevation: 5,
@@ -78,7 +79,7 @@ class _FirstScreenState extends State<FirstScreen>
             ),
             TextButton(
               onPressed: () {
-                context.go('/login'); // 로그인 페이지 이동
+                context.push('/login');
               },
               child: const Text(
                 "로그인",

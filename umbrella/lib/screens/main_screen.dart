@@ -193,12 +193,12 @@ class _MainScreenState extends State<MainScreen> {
                                   isScrollControlled: true, // ✅ 바텀시트 크기 조절 가능
                                   builder: (context) {
                                     return Container(
-                                      margin: const EdgeInsets.all(12),
+                                      margin: const EdgeInsets.all(15),
                                       height: 450,
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(
-                                            20), // ✅ 둥근 모서리
+                                            30), // ✅ 둥근 모서리
                                       ),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -246,7 +246,7 @@ class _MainScreenState extends State<MainScreen> {
                                           // ✅ 취소 버튼
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(
-                                                40, 0, 40, 0),
+                                                20, 0, 20, 0),
                                             child: SizedBox(
                                               width: double.infinity,
                                               height: 40,
@@ -598,17 +598,22 @@ class _OnboardingPopupState extends State<_OnboardingPopup> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // ✅ 제목
+          const SizedBox(
+            height: 30,
+          ),
           Text(
             onboardingData[currentIndex]["title"]!,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 18,
+            ),
           ),
-          const SizedBox(height: 45),
+          const SizedBox(height: 20),
 
           // ✅ 중앙 이미지 (사용자가 직접 추가)
           Image.asset(
@@ -639,7 +644,9 @@ class _OnboardingPopupState extends State<_OnboardingPopup> {
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: index == currentIndex ? Colors.blue : Colors.grey[300],
+                  color: index == currentIndex
+                      ? const Color(0xFF26539C)
+                      : const Color(0xFF26539C).withOpacity(0.4),
                 ),
               ),
             ),
@@ -651,7 +658,7 @@ class _OnboardingPopupState extends State<_OnboardingPopup> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Icons.arrow_back_ios_new),
                 onPressed: prevPage,
                 color: currentIndex > 0
                     ? Colors.black
@@ -659,7 +666,7 @@ class _OnboardingPopupState extends State<_OnboardingPopup> {
               ),
               if (currentIndex < totalPages - 1)
                 IconButton(
-                  icon: const Icon(Icons.arrow_forward),
+                  icon: const Icon(Icons.arrow_forward_ios),
                   onPressed: nextPage,
                 )
               else

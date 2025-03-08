@@ -10,7 +10,7 @@ class Signup1Screen extends StatefulWidget {
 
 class _Signup1ScreenState extends State<Signup1Screen> {
   final TextEditingController _emailController = TextEditingController();
-  final RegExp emailRegex = RegExp(r'.+@sch\.ac\.kr$'); // ✅ 허용되는 이메일 형식 변경
+  final RegExp emailRegex = RegExp(r'.+@sch\.ac\.kr$');
 
   void _validateAndProceed() {
     if (!emailRegex.hasMatch(_emailController.text)) {
@@ -21,7 +21,7 @@ class _Signup1ScreenState extends State<Signup1Screen> {
         ),
       );
     } else {
-      context.go('/signup2');
+      context.push('/signup2');
     }
   }
 
@@ -31,7 +31,7 @@ class _Signup1ScreenState extends State<Signup1Screen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             if (GoRouter.of(context).canPop()) {
               context.pop();
@@ -49,25 +49,30 @@ class _Signup1ScreenState extends State<Signup1Screen> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                hintText: "SCH Mail",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
+            SizedBox(
+              height: 50,
+              child: TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  hintText: "SCH Mail",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.orange, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.orange, width: 2),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -76,7 +81,7 @@ class _Signup1ScreenState extends State<Signup1Screen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: const Text(

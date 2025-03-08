@@ -11,18 +11,18 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _showErrorMessage = false;
 
   void _validateAndLogin() {
     if (_idController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() {
-        _showErrorMessage = true;
-      });
+      // ✅ UI 변경 대신 스낵바를 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("회원 정보를 확인해 주세요."),
+          backgroundColor: Colors.red,
+        ),
+      );
     } else {
-      setState(() {
-        _showErrorMessage = false;
-      });
-      context.go('/main'); // ✅ main_screen.dart로 이동
+      context.go('/main'); // 로그인 성공 시 main 화면으로 이동
     }
   }
 
@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             context.go('/');
           },
@@ -53,47 +53,49 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _idController,
-              decoration: InputDecoration(
-                hintText: "아이디",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                hintText: "비밀번호",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
+            SizedBox(
+              height: 50,
+              child: TextField(
+                controller: _idController,
+                decoration: InputDecoration(
+                  hintText: "아이디",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.orange, width: 2),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 5),
-            if (_showErrorMessage)
-              const Text(
-                "회원 정보를 확인해 주세요.",
-                style: TextStyle(color: Colors.orange, fontSize: 14),
+            const SizedBox(height: 25),
+            SizedBox(
+              height: 50,
+              child: TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: "비밀번호",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.orange, width: 2),
+                  ),
+                ),
               ),
-            const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 25),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -102,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: const Text(

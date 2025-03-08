@@ -5,7 +5,7 @@ import 'screens/signup_1_screen.dart';
 import 'screens/signup_2_screen.dart';
 import 'screens/signup_3_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_screen.dart'; // ✅ 메인 화면 추가
+import 'screens/main_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -22,10 +22,7 @@ class MyApp extends StatelessWidget {
       GoRoute(
           path: '/signup3', builder: (context, state) => const Signup3Screen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(
-          path: '/main',
-          builder: (context, state) =>
-              const MainScreen()), // ✅ main_screen.dart 추가
+      GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
     ],
   );
 
