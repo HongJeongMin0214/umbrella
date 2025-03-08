@@ -44,331 +44,338 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawerEnableOpenDragGesture: false,
-      drawer: _buildDrawer(), // ✅ 좌측 메뉴 추가
-      body: Stack(
-        children: [
-          // 지도 (FlutterMap)
-          FlutterMap(
-            mapController: _mapController,
-            options: const MapOptions(
-              initialZoom: 17,
-              minZoom: 13,
-              maxZoom: 18,
-              initialCenter: LatLng(36.77203, 126.9316),
-              interactionOptions: InteractionOptions(
-                flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        drawerEnableOpenDragGesture: false,
+        drawer: _buildDrawer(), // ✅ 좌측 메뉴 추가
+        body: Stack(
+          children: [
+            // 지도 (FlutterMap)
+            FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialZoom: 17,
+                minZoom: 13,
+                maxZoom: 18,
+                initialCenter: LatLng(36.77203, 126.9316),
+                interactionOptions: InteractionOptions(
+                  flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                ),
               ),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ),
-              if (_locationPermissionGranted)
-                CurrentLocationLayer(
-                  style: LocationMarkerStyle(
-                    showAccuracyCircle: false,
-                    showHeadingSector: true,
-                    accuracyCircleColor: Colors.blue.withOpacity(0.2),
-                    marker: const DefaultLocationMarker(
-                      color: Colors.red,
+              children: [
+                TileLayer(
+                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                ),
+                if (_locationPermissionGranted)
+                  CurrentLocationLayer(
+                    style: LocationMarkerStyle(
+                      showAccuracyCircle: false,
+                      showHeadingSector: true,
+                      accuracyCircleColor: Colors.blue.withOpacity(0.2),
+                      marker: const DefaultLocationMarker(
+                        color: Colors.red,
+                      ),
                     ),
                   ),
-                ),
-              GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(30)),
-                    ),
-                    builder: (context) => Container(
-                      padding: const EdgeInsets.all(20),
-                      height: 230, // 모달 높이 조절 가능
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      shape: const RoundedRectangleBorder(
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(30)),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // 상단 바 (모달 핸들)
-                          Container(
-                            width: 50,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 227, 227, 227),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          // 장소명 & 즐겨찾기 아이콘
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "미디어랩스",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Color.fromARGB(255, 78, 78, 78),
-                                ),
-                              ),
-
-                              // 즐겨찾기 아이콘
-                            ],
-                          ),
-
-                          // 우산 & 빈 슬롯 정보
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(
-                                width: 50,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      "4",
-                                      style: TextStyle(
-                                          fontSize: 40,
-                                          color: Color(0xFF0061FF),
-                                          fontWeight: FontWeight.w100),
-                                    ),
-                                    Text(
-                                      "우산",
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                height: 50,
-                                width: 1,
-                                color: Colors.grey[300],
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 30),
-                              ),
-                              const SizedBox(
-                                width: 50,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      "6",
-                                      style: TextStyle(
-                                          fontSize: 40,
-                                          color: Color(0xFFFF0000),
-                                          fontWeight: FontWeight.w100),
-                                    ),
-                                    Text(
-                                      "빈 슬롯",
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // 이용하기 버튼
-                          SizedBox(
-                            width: double.infinity,
-                            height: 40,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00B2FF),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                              ),
-                              onPressed: () {
-                                print("이용하기 버튼 클릭됨");
-                                showModalBottomSheet(
-                                  context: context,
-                                  backgroundColor:
-                                      Colors.transparent, // ✅ 바텀시트의 배경을 투명하게 설정
-                                  isScrollControlled: true, // ✅ 바텀시트 크기 조절 가능
-                                  builder: (context) {
-                                    return Container(
-                                      margin: const EdgeInsets.all(15),
-                                      height: 450,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(
-                                            30), // ✅ 둥근 모서리
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const SizedBox(height: 45),
-                                          const Text(
-                                            "NFC 태그",
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          // ✅ NFC 아이콘
-                                          Container(
-                                            padding: const EdgeInsets.all(20),
-                                            decoration: BoxDecoration(
-                                              color: Colors
-                                                  .transparent, // ✅ 아이콘 배경색
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                const SizedBox(
-                                                  width: 40,
-                                                ),
-                                                Image.asset(
-                                                  'lib/assets/tag.png',
-                                                  width: 160,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          // ✅ 설명 텍스트
-                                          const Text(
-                                            "휴대전화의 뒷면을 카드 리더기에 대세요.",
-                                            style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.black),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          // ✅ 취소 버튼
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                20, 0, 20, 0),
-                                            child: SizedBox(
-                                              width: double.infinity,
-                                              height: 40,
-                                              child: TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                    context), // ✅ 바텀시트 닫기
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      Colors.grey[300],
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                  ),
-                                                ),
-                                                child: const Text("취소",
-                                                    style: TextStyle(
-                                                        color: Colors.black)),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                              child: const Text(
-                                "이용하기",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                      builder: (context) => Container(
+                        padding: const EdgeInsets.all(20),
+                        height: 230, // 모달 높이 조절 가능
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(30)),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 상단 바 (모달 핸들)
+                            Container(
+                              width: 50,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 227, 227, 227),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                child: MarkerLayer(
-                  markers: [
-                    Marker(
-                      width: 60,
-                      height: 60,
-                      point: const LatLng(36.77200, 126.9317),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // ✅ 타원형 배경
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF26539C),
-                              borderRadius: BorderRadius.circular(20), // 둥근 모서리
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            const SizedBox(height: 10),
+
+                            // 장소명 & 즐겨찾기 아이콘
+                            const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Image.asset(
-                                  'lib/assets/umbrella.png',
-                                  width: 12,
-                                ),
-                                const SizedBox(width: 3),
-                                const Text(
-                                  "4", // 숫자
+                                Text(
+                                  "미디어랩스",
                                   style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400),
+                                    fontSize: 18,
+                                    color: Color.fromARGB(255, 78, 78, 78),
+                                  ),
                                 ),
-                                const SizedBox(width: 2)
+
+                                // 즐겨찾기 아이콘
                               ],
                             ),
-                          ),
-                          // ✅ 아래 삼각형 (Transform 사용)
-                          Transform.translate(
-                            offset: const Offset(0, -6),
-                            child: Transform.rotate(
-                              angle: 3.14 / 4, // 45도 회전
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                color: const Color(0xFF26539C), // 삼각형과 같은 색상
+
+                            // 우산 & 빈 슬롯 정보
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const SizedBox(
+                                  width: 50,
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        "4",
+                                        style: TextStyle(
+                                            fontSize: 40,
+                                            color: Color(0xFF0061FF),
+                                            fontWeight: FontWeight.w100),
+                                      ),
+                                      Text(
+                                        "우산",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  height: 50,
+                                  width: 1,
+                                  color: Colors.grey[300],
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 30),
+                                ),
+                                const SizedBox(
+                                  width: 50,
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        "6",
+                                        style: TextStyle(
+                                            fontSize: 40,
+                                            color: Color(0xFFFF0000),
+                                            fontWeight: FontWeight.w100),
+                                      ),
+                                      Text(
+                                        "빈 슬롯",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // 이용하기 버튼
+                            SizedBox(
+                              width: double.infinity,
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF00B2FF),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(40),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  print("이용하기 버튼 클릭됨");
+                                  showModalBottomSheet(
+                                    context: context,
+                                    backgroundColor: Colors
+                                        .transparent, // ✅ 바텀시트의 배경을 투명하게 설정
+                                    isScrollControlled: true, // ✅ 바텀시트 크기 조절 가능
+                                    builder: (context) {
+                                      return Container(
+                                        margin: const EdgeInsets.all(15),
+                                        height: 450,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                              30), // ✅ 둥근 모서리
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const SizedBox(height: 45),
+                                            const Text(
+                                              "NFC 태그",
+                                              style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            // ✅ NFC 아이콘
+                                            Container(
+                                              padding: const EdgeInsets.all(20),
+                                              decoration: BoxDecoration(
+                                                color: Colors
+                                                    .transparent, // ✅ 아이콘 배경색
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const SizedBox(
+                                                    width: 40,
+                                                  ),
+                                                  Image.asset(
+                                                    'lib/assets/tag.png',
+                                                    width: 160,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            // ✅ 설명 텍스트
+                                            const Text(
+                                              "휴대전화의 뒷면을 카드 리더기에 대세요.",
+                                              style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.black),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            // ✅ 취소 버튼
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      20, 0, 20, 0),
+                                              child: SizedBox(
+                                                width: double.infinity,
+                                                height: 40,
+                                                child: TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context), // ✅ 바텀시트 닫기
+                                                  style: TextButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.grey[300],
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                    ),
+                                                  ),
+                                                  child: const Text("취소",
+                                                      style: TextStyle(
+                                                          color: Colors.black)),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 10),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                child: const Text(
+                                  "이용하기",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
+                  child: MarkerLayer(
+                    markers: [
+                      Marker(
+                        width: 60,
+                        height: 60,
+                        point: const LatLng(36.77200, 126.9317),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // ✅ 타원형 배경
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF26539C),
+                                borderRadius:
+                                    BorderRadius.circular(20), // 둥근 모서리
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'lib/assets/umbrella.png',
+                                    width: 12,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  const Text(
+                                    "4", // 숫자
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(width: 2)
+                                ],
+                              ),
+                            ),
+                            // ✅ 아래 삼각형 (Transform 사용)
+                            Transform.translate(
+                              offset: const Offset(0, -6),
+                              child: Transform.rotate(
+                                angle: 3.14 / 4, // 45도 회전
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  color: const Color(0xFF26539C), // 삼각형과 같은 색상
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // UI 오버레이 요소
-          Positioned(
-            top: 40,
-            left: 16,
-            child: _buildMenuButton(),
-          ),
-          Positioned(
-            top: 40,
-            left: MediaQuery.of(context).size.width / 2 - 120,
-            child: _buildTopContainer(),
-          ),
-          Positioned(
-            top: 40,
-            right: 16,
-            child: _buildSearchButton(),
-          ),
-          Positioned(
-            bottom: 30,
-            right: 16,
-            child: _buildFloatingButtons(),
-          ),
-        ],
+            // UI 오버레이 요소
+            Positioned(
+              top: 40,
+              left: 16,
+              child: _buildMenuButton(),
+            ),
+            Positioned(
+              top: 40,
+              left: MediaQuery.of(context).size.width / 2 - 120,
+              child: _buildTopContainer(),
+            ),
+            Positioned(
+              top: 40,
+              right: 16,
+              child: _buildSearchButton(),
+            ),
+            Positioned(
+              bottom: 30,
+              right: 16,
+              child: _buildFloatingButtons(),
+            ),
+          ],
+        ),
       ),
     );
   }
