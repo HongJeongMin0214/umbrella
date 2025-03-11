@@ -70,12 +70,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     hintText: "아이디",
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(7),
                       borderSide:
                           const BorderSide(color: Colors.grey, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(7),
                       borderSide:
                           const BorderSide(color: Colors.orange, width: 2),
                     ),
@@ -91,12 +91,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     hintText: "비밀번호",
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(7),
                       borderSide:
                           const BorderSide(color: Colors.grey, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(7),
                       borderSide:
                           const BorderSide(color: Colors.orange, width: 2),
                     ),
@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(7),
                     ),
                   ),
                   child: const Text(

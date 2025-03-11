@@ -103,12 +103,12 @@ class _Signup2ScreenState extends State<Signup2Screen> {
                 decoration: InputDecoration(
                   hintText: "인증번호",
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(7),
                     borderSide:
                         const BorderSide(color: Colors.orange, width: 2),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(7),
                     borderSide:
                         const BorderSide(color: Colors.orange, width: 2),
                   ),
@@ -152,7 +152,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(7),
                   ),
                 ),
                 child: const Text(

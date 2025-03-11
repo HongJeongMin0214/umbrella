@@ -60,12 +60,12 @@ class _Signup1ScreenState extends State<Signup1Screen> {
                 decoration: InputDecoration(
                   hintText: "SCH Mail",
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(7),
                     borderSide:
                         const BorderSide(color: Colors.orange, width: 2),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(7),
                     borderSide:
                         const BorderSide(color: Colors.orange, width: 2),
                   ),
@@ -81,7 +81,7 @@ class _Signup1ScreenState extends State<Signup1Screen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(7),
                   ),
                 ),
                 child: const Text(

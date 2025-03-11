@@ -264,7 +264,7 @@ class _MainScreenState extends State<MainScreen> {
                                                         RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                              10),
+                                                              7),
                                                     ),
                                                   ),
                                                   child: const Text("취소",

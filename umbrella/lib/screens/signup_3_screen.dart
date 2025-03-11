@@ -102,7 +102,7 @@ class _Signup3ScreenState extends State<Signup3Screen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(7),
                     ),
                   ),
                   child: const Text(
@@ -131,11 +131,11 @@ class _Signup3ScreenState extends State<Signup3Screen> {
         decoration: InputDecoration(
           hintText: hint,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(7),
             borderSide: const BorderSide(color: Colors.grey, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(7),
             borderSide: const BorderSide(color: Colors.orange, width: 2),
           ),
         ),
