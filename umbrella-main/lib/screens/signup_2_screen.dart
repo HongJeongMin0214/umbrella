@@ -252,13 +252,19 @@ class _Signup2ScreenState extends State<Signup2Screen> {
     _startCountdown(); // 타이머 재시작
 
     // 서버로 인증번호 재전송 요청 보내기
-    bool sent = await _apiService.sendVerificationCode(widget.email);
+    String sent = await _apiService.sendVerificationCode(widget.email);
     if (!mounted) return;
 
     // 인증번호 재발송 성공/실패 처리
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(sent ? "새 인증번호가 전송되었습니다." : "인증번호 전송 실패."),
-    ));
+    if (sent == "success") {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("새 인증번호가 전송되었습니다."),
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("인증번호 전송 실패."),
+      ));
+    }
   }
 
   // 인증번호 검증 함수

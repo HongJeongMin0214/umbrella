@@ -11,17 +11,12 @@ class MockApiInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     // 이메일 인증번호 전송 처리 (기존 코드)
     if (options.path == 'https://mock-api.com/send-email') {
-      String? email = options.data["email"];
-      if (email == null || email.isEmpty) {
-        developer.log("❌ 이메일이 null 또는 비어 있음!");
-        handler.reject(DioException(
-          requestOptions: options,
-          type: DioExceptionType.badResponse,
-          message: "이메일 값이 없습니다.",
-        ));
+      String email = options.data["email"];
+
+      if (email == 'sch@sch.ac.kr') {
+        handler.resolve(Response(requestOptions: options, statusCode: 300));
         return;
       }
-
       // 새로운 인증번호 생성 및 저장
       String code =
           (Random().nextInt(900000) + 100000).toString(); // 6자리 인증번호 생성

@@ -31,15 +31,24 @@ class _Signup1ScreenState extends State<Signup1Screen> {
 
     // 이메일을 서버로 보내 인증번호 요청
     try {
-      bool success = await _apiService.sendVerificationCode(email);
+      String result = await _apiService.sendVerificationCode(email);
       if (!mounted) return;
 
-      if (success) {
-        context.push('/signup2', extra: email);
-      } else {
+      if (result == "success") {
+        context.push('/signup2', extra: email); // 인증번호 전송 성공
+      } else if (result == "email_exists") {
+        // 이메일이 이미 존재할 경우
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("인증번호 전송 실패. 다시 시도해 주세요."),
+            content: Text("이메일이 이미 존재합니다."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else if (result == "error") {
+        // 서버 오류가 발생한 경우
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("인증번호 발송 실패. 다시 시도해 주세요."),
             backgroundColor: Colors.red,
           ),
         );

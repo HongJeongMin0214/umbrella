@@ -10,7 +10,7 @@ class ApiService {
   }
 
   // 이메일 인증번호 전송 요청
-  Future<bool> sendVerificationCode(String email) async {
+  Future<String> sendVerificationCode(String email) async {
     try {
       developer.log("🛠️ 이메일 인증 요청 - 이메일: $email");
 
@@ -21,14 +21,15 @@ class ApiService {
 
       if (response.statusCode == 200) {
         developer.log("✅ 인증번호 전송 성공");
-        return true;
+        return "success";
       } else {
-        developer.log("❌ 인증번호 전송 실패, 상태 코드: ${response.statusCode}");
-        return false;
+        //인증번호 이미 존재하는지
+        developer.log("❌ 이메일 이미 존재. 인증번호 전송 실패, 상태 코드: ${response.statusCode}");
+        return "email_exists";
       }
     } catch (e) {
       developer.log("❌ 이메일 인증 오류: $e");
-      return false;
+      return "error";
     }
   }
 
