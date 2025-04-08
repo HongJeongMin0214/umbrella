@@ -2,64 +2,87 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:umbrella/services/api_service.dart'; // ApiService import 추가
 
-class Signup1Screen extends StatefulWidget {
-  const Signup1Screen({super.key});
+class SignupOrResetScreen extends StatefulWidget {
+  final bool isPasswordReset; // 비밀번호 변경인지 여부를 확인하는 플래그 추가
+
+  const SignupOrResetScreen(
+      {super.key, required this.isPasswordReset}); // 플래그를 필수값으로 추가
 
   @override
-  State<Signup1Screen> createState() => _Signup1ScreenState();
+  State<SignupOrResetScreen> createState() => _SignupOrResetScreenState();
 }
 
-class _Signup1ScreenState extends State<Signup1Screen> {
+class _SignupOrResetScreenState extends State<SignupOrResetScreen> {
   final TextEditingController _emailController = TextEditingController();
   final RegExp emailRegex = RegExp(r'.+@sch\.ac\.kr$');
-
-  // ApiService 인스턴스 생성
   final ApiService _apiService = ApiService();
+
+  void _showSnackBar(String message, {Color backgroundColor = Colors.red}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+      ),
+    );
+  }
 
   Future<void> _validateAndProceed() async {
     String email = _emailController.text.trim();
 
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("유효한 SCH Mail이 아닙니다."),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar("유효한 SCH Mail이 아닙니다.");
       return;
     }
 
-    // 이메일을 서버로 보내 인증번호 요청
     try {
-      String result = await _apiService.sendVerificationCode(email);
-      if (!mounted) return;
+      String result =
+          await _apiService.sendVerificationCode(email, widget.isPasswordReset);
 
-      if (result == "success") {
-        context.push('/signup2', extra: email); // 인증번호 전송 성공
-      } else if (result == "email_exists") {
-        // 이메일이 이미 존재할 경우
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("이메일이 이미 존재합니다."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } else if (result == "error") {
-        // 서버 오류가 발생한 경우
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("인증번호 발송 실패. 다시 시도해 주세요."),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (!mounted) return; // 위젯이 트리에 존재하는지 체크
+
+      if (widget.isPasswordReset) {
+        // 비밀번호 변경 시 동작
+        if (result == "success") {
+          context.push('/signup2', extra: {
+            'email': email,
+            'isPasswordReset': widget.isPasswordReset, // 이 값을 그대로 넘김
+          }); // 비밀번호 변경 절차로 이동
+        } else if (result == "changepw_email_not_exists") {
+          // 비밀번호 변경 이메일이 존재하지 않으면 처리
+          _showSnackBar("비밀번호 변경할 이메일이 존재하지 않습니다. 다시 확인해주세요.");
+        } else if (result == "error_timeout") {
+          _showSnackBar("네트워크 지연으로 인증번호 발송에 실패했습니다.");
+        } else if (result == "error_server_timeout") {
+          _showSnackBar("서버 응답이 지연되었습니다. 잠시 후 시도해주세요.");
+        } else if (result == "error_network") {
+          _showSnackBar("인터넷 연결을 확인해주세요.");
+        } else {
+          // 기타 오류 처리
+          _showSnackBar("비밀번호 변경 이메일 인증 오류가 발생했습니다.");
+        }
+      } else {
+        // 회원가입 로직
+        if (result == "success") {
+          context.push('/signup2', extra: {
+            'email': email,
+            'isPasswordReset': widget.isPasswordReset, // 이 값을 그대로 넘김
+          }); // 회원가입 절차로 이동
+        } else if (result == "signup_email_exists") {
+          // 이미 가입된 이메일 처리
+          _showSnackBar("이메일이 이미 존재합니다.");
+        } else if (result == "error_timeout") {
+          _showSnackBar("네트워크 지연으로 인증번호 발송에 실패했습니다.");
+        } else if (result == "error_server_timeout") {
+          _showSnackBar("서버 응답이 지연되었습니다. 잠시 후 시도해주세요.");
+        } else if (result == "error_network") {
+          _showSnackBar("인터넷 연결을 확인해주세요.");
+        } else if (result == "error") {
+          // 인증번호 발송 실패 처리
+          _showSnackBar("인증번호 발송 실패. 다시 시도해 주세요.");
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("서버 오류가 발생했습니다. 다시 시도해 주세요."),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar("인증 요청 중 오류가 발생했습니다. 다시 시도해 주세요.");
     }
   }
 
@@ -72,15 +95,16 @@ class _Signup1ScreenState extends State<Signup1Screen> {
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             if (GoRouter.of(context).canPop()) {
-              context.pop();
+              // 이전 페이지가 있으면
+              context.pop(); //이전 페이지로 이동
             } else {
-              context.go('/');
+              context.go('/'); //이전 페이지가 없으면 /으로
             }
           },
         ),
-        title: const Text(
-          "회원가입",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          widget.isPasswordReset ? "비밀번호 변경" : "회원가입", // 비밀번호 변경 시 제목 변경
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
         backgroundColor: Colors.white,
@@ -99,8 +123,6 @@ class _Signup1ScreenState extends State<Signup1Screen> {
                   hintText: "SCH Mail",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(7),
-                    borderSide:
-                        const BorderSide(color: Colors.orange, width: 2),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(7),
@@ -110,7 +132,15 @@ class _Signup1ScreenState extends State<Signup1Screen> {
                 ),
               ),
             ),
-            const SizedBox(height: 25),
+            widget.isPasswordReset
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Text(
+                      "가입한 이메일을 입력해주세요.",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  )
+                : const SizedBox(height: 25),
             SizedBox(
               width: double.infinity,
               height: 50,

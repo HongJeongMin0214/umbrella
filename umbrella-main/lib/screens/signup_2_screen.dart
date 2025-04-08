@@ -2,7 +2,6 @@
 // import 'package:go_router/go_router.dart';
 // import 'dart:async';
 // import 'package:umbrella/services/api_service.dart';
-// import 'dart:developer' as developer;
 
 // class Signup2Screen extends StatefulWidget {
 //   final String email;
@@ -14,7 +13,7 @@
 
 // class _Signup2ScreenState extends State<Signup2Screen> {
 //   final TextEditingController _codeController = TextEditingController();
-//   int _remainingSeconds = 60;
+//   int _remainingSeconds = 4;
 //   Timer? _timer;
 //   bool _isTimeOver = false;
 //   final RegExp _codeRegex = RegExp(r'^\d{6}$'); // 6자리 숫자 정규식
@@ -26,6 +25,7 @@
 //     _startCountdown();
 //   }
 
+//   // 타이머 시작
 //   void _startCountdown() {
 //     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
 //       if (_remainingSeconds > 0) {
@@ -41,22 +41,35 @@
 //     });
 //   }
 
+//   // 인증번호 재발송 함수
 //   void _resendCode() async {
 //     setState(() {
-//       _remainingSeconds = 60;
+//       _remainingSeconds = 4;
 //       _isTimeOver = false;
 //     });
-//     _startCountdown(); // 타이머 재시작
+//     _startCountdown();
 
-//     // 서버로 인증번호 재전송 요청 보내기
-//     bool sent = await _apiService.sendVerificationCode(widget.email);
+//     try {
+//       String sent = await _apiService.sendVerificationCode(widget.email, true);
+//       if (!mounted) return;
 
-//     // 인증번호 재발송 성공/실패 처리
-//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-//       content: Text(sent ? "새 인증번호가 전송되었습니다." : "인증번호 전송 실패."),
-//     ));
+//       if (sent == "success") {
+//         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+//           content: Text("새 인증번호가 전송되었습니다."),
+//         ));
+//       } else {
+//         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+//           content: Text("인증번호 전송 실패."),
+//         ));
+//       }
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+//         content: Text("인증번호 전송 중 오류가 발생했습니다. 다시 시도해 주세요."),
+//       ));
+//     }
 //   }
 
+//   // 인증번호 검증 함수
 //   Future<void> _validateCode() async {
 //     String email = widget.email; // `Signup1Screen`에서 넘겨받은 이메일
 
@@ -68,8 +81,8 @@
 //       if (!mounted) return; // 위젯이 사라졌다면 실행하지 않음
 
 //       if (isValid) {
-//         // 인증 성공 후 `signup3` 화면으로 이동
-//         context.pushNamed('/signup3');
+//         if (!mounted) return;
+//         context.push('/signup3');
 //       } else {
 //         ScaffoldMessenger.of(context).showSnackBar(
 //           const SnackBar(
@@ -103,7 +116,12 @@
 //         leading: IconButton(
 //           icon: const Icon(Icons.arrow_back_ios_new),
 //           onPressed: () {
-//             context.go('/signup');
+//             if (GoRouter.of(context).canPop()) {
+//               // 이전 페이지가 있으면
+//               context.pop(); //이전 페이지로 이동
+//             } else {
+//               context.go('/'); //이전 페이지가 없으면 /으로
+//             }
 //           },
 //         ),
 //         title: const Text(
@@ -207,7 +225,13 @@ import 'package:umbrella/services/api_service.dart';
 
 class Signup2Screen extends StatefulWidget {
   final String email;
-  const Signup2Screen({super.key, required this.email});
+  final bool isPasswordReset;
+
+  const Signup2Screen({
+    super.key,
+    required this.email,
+    required this.isPasswordReset,
+  });
 
   @override
   _Signup2ScreenState createState() => _Signup2ScreenState();
@@ -215,7 +239,7 @@ class Signup2Screen extends StatefulWidget {
 
 class _Signup2ScreenState extends State<Signup2Screen> {
   final TextEditingController _codeController = TextEditingController();
-  int _remainingSeconds = 60;
+  int _remainingSeconds = 4;
   Timer? _timer;
   bool _isTimeOver = false;
   final RegExp _codeRegex = RegExp(r'^\d{6}$'); // 6자리 숫자 정규식
@@ -246,56 +270,89 @@ class _Signup2ScreenState extends State<Signup2Screen> {
   // 인증번호 재발송 함수
   void _resendCode() async {
     setState(() {
-      _remainingSeconds = 60;
+      _remainingSeconds = 4;
       _isTimeOver = false;
     });
-    _startCountdown(); // 타이머 재시작
+    _startCountdown();
 
-    // 서버로 인증번호 재전송 요청 보내기
-    String sent = await _apiService.sendVerificationCode(widget.email);
-    if (!mounted) return;
+    try {
+      String sent = await _apiService.sendVerificationCode(
+        widget.email,
+        widget.isPasswordReset,
+      );
 
-    // 인증번호 재발송 성공/실패 처리
-    if (sent == "success") {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("새 인증번호가 전송되었습니다."),
-      ));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("인증번호 전송 실패."),
-      ));
+      if (!mounted) return;
+
+      if (sent == "success") {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text("새 인증번호가 전송되었습니다."),
+          ));
+      } else {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text("인증번호 전송 실패."),
+          ));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(
+          content: Text("인증번호 전송 중 오류가 발생했습니다. 다시 시도해 주세요."),
+        ));
     }
   }
 
   // 인증번호 검증 함수
   Future<void> _validateCode() async {
-    String email = widget.email; // `Signup1Screen`에서 넘겨받은 이메일
+    String email = widget.email;
 
-    if (_codeRegex.hasMatch(_codeController.text.trim())) {
-      // 서버로 이메일과 인증번호를 보내 인증 여부 확인
-      bool isValid =
-          await _apiService.verifyCode(email, _codeController.text.trim());
-
-      if (!mounted) return; // 위젯이 사라졌다면 실행하지 않음
-
-      if (isValid) {
-        if (!mounted) return;
-        context.push('/signup3');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+    if (_isTimeOver) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
           const SnackBar(
-            content: Text("인증번호를 확인해주세요."),
+            content: Text("인증번호 입력 시간이 만료되었습니다."),
             backgroundColor: Colors.red,
           ),
         );
+      return; // 시간이 끝났으면 더 이상 검증하지 않음
+    }
+
+    if (_codeRegex.hasMatch(_codeController.text.trim())) {
+      bool isValid = await _apiService.verifyCode(
+        email,
+        _codeController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      if (isValid) {
+        context.push('/signup3', extra: {
+          'email': email,
+          'isPasswordReset': widget.isPasswordReset,
+        });
+      } else {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text("인증번호를 확인해주세요."),
+              backgroundColor: Colors.red,
+            ),
+          );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("인증번호는 6자리 숫자여야 합니다."),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text("인증번호는 6자리 숫자여야 합니다."),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
@@ -314,12 +371,16 @@ class _Signup2ScreenState extends State<Signup2Screen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            context.go('/signup');
+            if (GoRouter.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
           },
         ),
-        title: const Text(
-          "회원가입",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          widget.isPasswordReset ? "비밀번호 변경" : "회원가입",
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
         backgroundColor: Colors.white,

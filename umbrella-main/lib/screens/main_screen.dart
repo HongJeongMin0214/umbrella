@@ -3,6 +3,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:umbrella/services/auth_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:umbrella/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -49,7 +53,8 @@ class _MainScreenState extends State<MainScreen> {
       canPop: false,
       child: Scaffold(
         drawerEnableOpenDragGesture: false,
-        drawer: _buildDrawer(), // ✅ 좌측 메뉴 추가
+        drawer:
+            _buildDrawer(context.watch<UserProvider>(), context), // ✅ 좌측 메뉴 추가
         body: Stack(
           children: [
             // 지도 (FlutterMap)
@@ -401,72 +406,94 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // ✅ Drawer (좌측 메뉴)
-  Widget _buildDrawer() {
+  Widget _buildDrawer(UserProvider userProvider, BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
       child: Column(
         children: [
-          _buildDrawerHeader(),
-          _buildDrawerMenuItem(Icons.history, "이용 내역"),
-          Container(
-            color: const Color.fromARGB(255, 173, 173, 173),
-            height: 0.7,
-          ),
-          _buildDrawerMenuItem(Icons.info_outline, "이용 안내"),
-          Container(
-            color: const Color.fromARGB(255, 173, 173, 173),
-            height: 0.7,
-          ),
-          _buildDrawerMenuItem(Icons.headset_mic, "고객센터"),
-          Container(
-            color: const Color.fromARGB(255, 173, 173, 173),
-            height: 0.7,
-          ),
+          _buildDrawerHeader(userProvider, context),
+
+          // ✅ 메뉴: 로그인 상태일 때만 추가 메뉴 보이기
+          if (userProvider.isLoggedIn) ...[
+            _buildDrawerMenuItem(Icons.history, "이용 내역"),
+            Divider(height: 1, color: Colors.grey[300]),
+            _buildDrawerMenuItem(Icons.info_outline, "이용 안내"),
+            Divider(height: 1, color: Colors.grey[300]),
+            _buildDrawerMenuItem(Icons.headset_mic, "고객센터"),
+            Divider(height: 1, color: Colors.grey[300]),
+            const Spacer(),
+            // 하단 로그아웃 버튼
+            Padding(
+              padding: const EdgeInsets.only(bottom: 30),
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text(
+                  "로그아웃",
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () async {
+                  final userProvider = context.read<UserProvider>();
+                  await userProvider.logout();
+                  if (context.mounted) {
+                    context.go('/'); // 첫 화면으로 이동
+                  }
+                },
+              ),
+            ),
+          ] else ...[
+            // ✅ 로그아웃 상태일 때는 '이용 안내'만
+            _buildDrawerMenuItem(Icons.info_outline, "이용 안내"),
+          ],
         ],
       ),
     );
   }
 
   // ✅ Drawer 상단 프로필 영역 (정렬 및 디자인 개선)
-  Widget _buildDrawerHeader() {
+  Widget _buildDrawerHeader(UserProvider userProvider, BuildContext context) {
+    if (!userProvider.isLoggedIn) {
+      return ListTile(
+        leading: const Icon(Icons.login),
+        title: const Text('로그인'),
+        onTap: () {
+          context.go('/login');
+        },
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
       color: Colors.white,
       child: Row(
         children: [
-          // 프로필 이미지
           CircleAvatar(
             radius: 30,
             backgroundColor: Colors.grey[300],
             child: const Icon(Icons.person, size: 40, color: Colors.white),
           ),
           const SizedBox(width: 16),
-
-          // 사용자 정보
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    "김사물",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "iotkim1004",
-                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                width: 10,
-              )
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userProvider.userName ?? '사용자',
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  userProvider.userData?['id'] ?? '',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
-
-          // 프로필 수정 아이콘 (">")
-          const Icon(Icons.chevron_right,
-              size: 30, color: Color.fromARGB(255, 67, 67, 67)),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () {
+              context.push('/profile');
+            },
+          ),
         ],
       ),
     );

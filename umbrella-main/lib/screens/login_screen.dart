@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:umbrella/services/api_service.dart';
+import 'package:umbrella/services/auth_service.dart';
+import 'package:umbrella/provider/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,28 +24,29 @@ class _LoginScreenState extends State<LoginScreen> {
     String password = _passwordController.text.trim();
 
     if (id.isEmpty || password.isEmpty) {
-      // 아이디나 비밀번호가 비어있으면 오류 메시지 표시
       setState(() {
         _errorMessage = '아이디와 비밀번호를 입력해 주세요.';
       });
-    } else {
-      // 서버에 로그인 요청
-      bool success = await ApiService().loginUser(id, password);
-      if (!mounted) return;
+      return;
+    }
 
-      if (success) {
-        // 로그인 성공 시 메인 화면으로 이동
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("로그인 성공!"),
-          backgroundColor: Colors.green,
-        ));
-        context.go('/main'); // 로그인 후 메인 화면으로 이동
-      } else {
-        // 로그인 실패 시 오류 메시지 표시
-        setState(() {
-          _errorMessage = '아이디 또는 비밀번호가 틀렸습니다.';
-        });
-      }
+    // 로그인 시도
+    final apiService = context.read<ApiService>();
+    bool success = await apiService.loginUser(context, id, password);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("로그인 성공!"),
+        backgroundColor: Colors.green,
+      ));
+
+      context.go('/main'); // 메인 화면 이동
+    } else {
+      setState(() {
+        _errorMessage = '아이디 또는 비밀번호가 틀렸습니다.';
+      });
     }
   }
 
@@ -115,7 +119,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 25),
             // 오류 메시지 표시
             if (_errorMessage.isNotEmpty)
               Padding(
@@ -144,6 +147,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontSize: 16,
                       color: Colors.white,
                       fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 25),
+            Center(
+              // <=== 가운데 정렬
+              child: GestureDetector(
+                onTap: () {
+                  context.go('/signup', extra: true); // 첫 화면으로 이동
+                },
+                child: const Text(
+                  "비밀번호 재설정",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue,
+                  ),
                 ),
               ),
             ),
