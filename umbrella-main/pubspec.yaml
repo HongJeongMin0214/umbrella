@@ -46,6 +46,7 @@ dependencies:
   shared_preferences: ^2.2.2
   jwt_decoder: ^2.0.1
   provider: ^6.1.1
+  flutter_nfc_kit: ^3.3.3
 
 dev_dependencies:
   flutter_test:

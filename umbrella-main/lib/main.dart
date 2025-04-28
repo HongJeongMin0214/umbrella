@@ -12,13 +12,18 @@ import 'package:umbrella/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // UserProvider 인스턴스를 생성하고, 앱 시작 시 사용자 데이터 로드
   final userProvider = UserProvider();
   await userProvider.loadUserFromStorage();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => userProvider),
-        Provider<ApiService>(create: (_) => ApiService()), // ✅ 여기에 DI 등록
+        ChangeNotifierProvider(
+            create: (_) =>
+                userProvider), // UserProvider를 ChangeNotifierProvider로 설정
+        Provider<ApiService>(create: (_) => ApiService()), // ApiService DI 등록
       ],
       child: MyApp(),
     ),
@@ -32,8 +37,7 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/signup',
         builder: (context, state) {
-          final isPasswordReset = state.extra as bool? ??
-              false; // <수정> extra 값을 가져와서 사용. state.extra가 bool 타입이면 그대로 사용. null이면 false.
+          final isPasswordReset = state.extra as bool? ?? false;
           return SignupOrResetScreen(isPasswordReset: isPasswordReset);
         },
       ),

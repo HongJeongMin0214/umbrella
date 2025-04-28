@@ -251,6 +251,49 @@ class ApiService {
       return null;
     }
   }
+
+  Future<Map<String, int>> fetchUmbrellaStatus(String boxId) async {
+    try {
+      final response = await _dio.get('/umbrella-status', queryParameters: {
+        'id': boxId,
+      });
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final data = response.data;
+
+        return {
+          "umbrella": data["umbrella"] ?? 0,
+          "emptySlot": data["emptySlot"] ?? 0,
+        };
+      } else {
+        throw Exception('잘못된 응답입니다: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("❌ fetchUmbrellaStatus 에러: $e");
+      throw Exception("서버에서 우산 상태를 불러오는 데 실패했습니다.");
+    }
+  }
+
+  Future<void> sendUmbrellaUsage(String userId, String lockerId) async {
+    try {
+      final response = await _dio.post(
+        '/use-umbrella',
+        data: {
+          "userId": userId,
+          "lockerId": lockerId,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        developer.log("✅ 우산 사용 정보 전송 완료");
+      } else {
+        developer.log("❌ 서버 응답 오류: ${response.statusCode}");
+      }
+    } catch (e) {
+      developer.log("❌ 우산 사용 정보 전송 실패: $e");
+      throw e;
+    }
+  }
 }
 
 

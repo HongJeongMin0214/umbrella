@@ -225,6 +225,65 @@ class MockApiInterceptor extends Interceptor {
 
       developer.log("✅ 비밀번호 변경 성공 (mock)");
       handler.resolve(Response(requestOptions: options, statusCode: 200));
+    }
+
+    // ✅ 우산함 상태 응답 처리
+    else if (options.path == '/umbrella-status') {
+      final boxId = options.queryParameters['id'];
+
+      if (boxId == '1') {
+        return handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: 200,
+            data: {
+              "umbrella": 5,
+              "emptySlot": 3,
+            },
+          ),
+        );
+      } else if (boxId == '2') {
+        return handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: 200,
+            data: {
+              "umbrella": 0,
+              "emptySlot": 8,
+            },
+          ),
+        );
+      } else {
+        return handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: 404,
+            data: {
+              "message": "해당 우산함을 찾을 수 없습니다.",
+            },
+          ),
+        );
+      }
+    } else if (path == '/use-umbrella') {
+      final userId = options.data?['userId'];
+      final lockerId = options.data?['lockerId'];
+
+      developer.log("📡 [MOCK] 우산 사용 요청 - 사용자: $userId, 우산함: $lockerId");
+
+      if (userId == null || lockerId == null) {
+        handler.reject(DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          message: "userId 또는 lockerId 누락",
+        ));
+        return;
+      }
+
+      handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: {"message": "우산 사용 기록 완료"},
+      ));
     } else {
       handler.next(options);
     }
