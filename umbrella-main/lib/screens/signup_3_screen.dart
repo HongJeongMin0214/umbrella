@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:umbrella/services/api_service.dart';
+import 'dart:developer' as developer;
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class Signup3Screen extends StatefulWidget {
   final bool isPasswordReset;
   final String email;
+  final String? tempToken;
 
   const Signup3Screen({
     super.key,
     required this.email,
     required this.isPasswordReset,
+    this.tempToken,
   });
 
   @override
@@ -25,7 +29,7 @@ class _Signup3ScreenState extends State<Signup3Screen> {
 
   String _errorMessage = '';
 
-  void _validateAndProceed() {
+  void _validateAndProceed() async {
     String password = _passwordController.text.trim();
     String passwordConfirm = _passwordConfirmController.text.trim();
     String name = _nameController.text.trim();
@@ -53,21 +57,33 @@ class _Signup3ScreenState extends State<Signup3Screen> {
         return;
       }
     }
+
     if (!_isPasswordValid(password)) {
       setState(() {
         _errorMessage = "비밀번호는 7자 이상이고, 특수문자가 포함되어야 합니다.";
       });
-    } else if (!_isPasswordConfirmValid(password, passwordConfirm)) {
+      return;
+    }
+
+    if (!_isPasswordConfirmValid(password, passwordConfirm)) {
       setState(() {
         _errorMessage = "비밀번호 확인이 일치하지 않습니다.";
       });
+      return;
+    }
+
+    if (widget.isPasswordReset) {
+      _changePassword(password);
     } else {
-      if (widget.isPasswordReset) {
-        _changePassword(widget.email, _idController.text.trim(), password);
-      } else {
-        _registerUser(_nameController.text.trim(), _idController.text.trim(),
-            password, widget.email);
+      // 디바이스 토큰 비동기로 받아오기
+      String? deviceToken = await FirebaseMessaging.instance.getToken();
+      if (deviceToken == null) {
+        developer.log("[LOG] ❌ 디바이스 토큰을 가져오지 못했습니다.");
+        _showSnackBar("디바이스 토큰 오류. 다시 시도해주세요.");
+        return;
       }
+
+      _registerUser(name, id, password, widget.email, deviceToken);
     }
   }
 
@@ -80,51 +96,49 @@ class _Signup3ScreenState extends State<Signup3Screen> {
     return password == passwordConfirm;
   }
 
-  void _changePassword(
-      String email, String currentPassword, String newPassword) async {
-    bool success =
-        await ApiService().changePw(email, currentPassword, newPassword);
+  void _changePassword(String newPassword) async {
+    if (widget.tempToken == null) {
+      developer.log("[LOG] ❌ 임시 토큰 없음");
+      _showSnackBar("문제가 발생했습니다. 처음부터 다시 시도해주세요.");
+      return;
+    }
+
+    bool success = await ApiService().changePw(
+      email: widget.email,
+      tempToken: widget.tempToken!,
+      newPassword: newPassword,
+    );
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          content: Text("비밀번호 변경 성공!"),
-          backgroundColor: Colors.green,
-        ));
+      _showSnackBar("비밀번호 변경 성공!", color: Colors.green);
       context.push('/login');
     } else {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          content: Text("비밀번호 변경 실패. 다시 시도해주세요."),
-          backgroundColor: Colors.red,
-        ));
+      _showSnackBar("비밀번호 변경 실패. 다시 시도해주세요.");
     }
   }
 
-  void _registerUser(
-      String name, String id, String password, String email) async {
-    bool success = await ApiService().registerUser(name, id, password, email);
-    if (!mounted) return;
+  void _registerUser(String name, String id, String password, String email,
+      String deviceToken) async {
+    try {
+      await ApiService().registerUser(name, id, password, email, deviceToken);
+      if (!mounted) return;
 
-    if (success) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          content: Text("회원가입 성공!"),
-          backgroundColor: Colors.green,
-        ));
+      _showSnackBar("회원가입 성공!", color: Colors.green);
       context.push('/login');
-    } else {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          content: Text("회원가입 실패. 다시 시도해주세요."),
-          backgroundColor: Colors.red,
-        ));
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(e.toString());
     }
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
+    _nameController.dispose();
+    _idController.dispose();
+    super.dispose();
   }
 
   @override
@@ -155,11 +169,11 @@ class _Signup3ScreenState extends State<Signup3Screen> {
               _buildTextField(
                 "아이디(8자리 학번)",
                 _idController,
-                isPassword: widget.isPasswordReset,
+                isPassword: widget.isPasswordReset, //비밀번호 변경이 아닐 때(false)
               ),
               const SizedBox(height: 25),
             ],
-            _buildTextField("새 비밀번호", _passwordController, isPassword: true),
+            _buildTextField("비밀번호", _passwordController, isPassword: true),
             const SizedBox(height: 25),
             _buildTextField("비밀번호 확인", _passwordConfirmController,
                 isPassword: true),
@@ -199,13 +213,26 @@ class _Signup3ScreenState extends State<Signup3Screen> {
     );
   }
 
+  void _showSnackBar(String message, {Color color = Colors.red}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: color,
+        ),
+      );
+  }
+
   Widget _buildTextField(String hint, TextEditingController controller,
       {bool isPassword = false}) {
+    //비밀번호 입력 필드인지 여부.
     return SizedBox(
       height: 50,
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText:
+            isPassword, //isPassword true로 비밀번호 입력 필드처럼 텍스트가 숨겨짐(obscureText)
         decoration: InputDecoration(
           hintText: hint,
           border: OutlineInputBorder(

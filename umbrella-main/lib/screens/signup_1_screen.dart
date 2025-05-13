@@ -87,6 +87,12 @@ class _SignupOrResetScreenState extends State<SignupOrResetScreen> {
   }
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -94,16 +100,22 @@ class _SignupOrResetScreenState extends State<SignupOrResetScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            if (GoRouter.of(context).canPop()) {
-              // 이전 페이지가 있으면
-              context.pop(); //이전 페이지로 이동
+            if (widget.isPasswordReset) {
+              context.go('/login');
             } else {
-              context.go('/'); //이전 페이지가 없으면 /으로
+              if (GoRouter.of(context).canPop()) {
+                // 이전 페이지가 있으면
+                context.pop(); //이전 페이지로 이동
+              } else {
+                context.go('/'); //이전 페이지가 없으면 /으로
+              }
             }
           },
         ),
         title: Text(
-          widget.isPasswordReset ? "비밀번호 변경" : "회원가입", // 비밀번호 변경 시 제목 변경
+          widget.isPasswordReset
+              ? "비밀번호 변경"
+              : "회원가입", // 비밀번호 변경 시 제목 변경. 참 왼쪽, 거짓 오른쪽
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,

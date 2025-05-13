@@ -45,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
       context.go('/main'); // 메인 화면 이동
     } else {
       setState(() {
+        //setState() 안에 작성된 코드는 상태를 변경하는 코드 ex.필요한 데이터를 갱신
         _errorMessage = '아이디 또는 비밀번호가 틀렸습니다.';
       });
     }
@@ -152,13 +153,14 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 25),
             Center(
-              // <=== 가운데 정렬
               child: GestureDetector(
+                //사용자의 제스처(터치, 스와이프 등)를 감지하고 특정 동작
                 onTap: () {
-                  context.go('/signup', extra: true); // 첫 화면으로 이동
+                  //터치했을 때
+                  context.go('/signup', extra: true);
                 },
                 child: const Text(
-                  "비밀번호 재설정",
+                  "비밀번호를 잊어버리셨나요?",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.blue,

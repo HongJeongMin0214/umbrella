@@ -11,6 +11,9 @@ class MockApiInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final path = options.path;
+    //개별 우산함 상태 조회
+    final RegExp lockerStatusRegex = RegExp(r'^/locker/([^/]+)/status$');
+    final match = lockerStatusRegex.firstMatch(options.path);
 
     if (path == '/send-email') {
       String email = options.data?["email"] ?? '';
@@ -24,10 +27,10 @@ class MockApiInterceptor extends Interceptor {
           String code = (Random().nextInt(900000) + 100000).toString();
           _codeStore[email] = code;
           print("📩 Mock 인증번호 발송 (비밀번호 변경): $code");
-          developer.log("📩 Mock 인증번호 발송 (비밀번호 변경): $code");
+          developer.log("[LOG] 📩 Mock 인증번호 발송 (비밀번호 변경): $code");
           handler.resolve(Response(requestOptions: options, statusCode: 200));
         } else {
-          developer.log("❌ 비밀번호 변경 실패 - 존재하지 않는 이메일: $email");
+          developer.log("[LOG] ❌ 비밀번호 변경 실패 - 존재하지 않는 이메일: $email");
           handler.resolve(Response(
               requestOptions: options,
               statusCode: 404,
@@ -46,7 +49,7 @@ class MockApiInterceptor extends Interceptor {
           String code = (Random().nextInt(900000) + 100000).toString();
           _codeStore[email] = code;
           print("📩 Mock 인증번호 발송: $code");
-          developer.log("📩 Mock 인증번호 발송: $code");
+          developer.log("[LOG] 📩 Mock 인증번호 발송: $code");
           handler.resolve(Response(requestOptions: options, statusCode: 200));
         }
       }
@@ -55,10 +58,58 @@ class MockApiInterceptor extends Interceptor {
       String? code = options.data?["code"];
 
       if (_codeStore[email] == code) {
-        developer.log("✅ 인증번호 검증 성공!");
+        developer.log("[LOG] ✅ 인증번호 검증 성공!");
         handler.resolve(Response(requestOptions: options, statusCode: 200));
       } else {
-        developer.log("❌ 인증번호 검증 실패! 저장된 인증번호: ${_codeStore[email]}");
+        developer.log("[LOG] ❌ 인증번호 검증 실패! 저장된 인증번호: ${_codeStore[email]}",
+            name: "log");
+        handler.reject(DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          message: "인증번호가 올바르지 않습니다.",
+        ));
+      }
+    } else if (path == '/changePw-verify-code') {
+      // ✅ 비밀번호 변경용 인증번호 확인 + 임시 토큰 발급
+      String? email = options.data?["email"];
+      String? code = options.data?["code"];
+
+      if (_codeStore[email] == code) {
+        final userEntry = _users.entries.firstWhere(
+          (entry) => entry.value["email"] == email,
+          orElse: () => const MapEntry('', {}),
+        );
+
+        if (userEntry.key.isEmpty) {
+          handler.reject(DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            message: "해당 이메일의 유저가 없습니다.",
+          ));
+          return;
+        }
+
+        final payload = {
+          "id": userEntry.key,
+          "email": email,
+          "exp":
+              DateTime.now().add(Duration(minutes: 5)).millisecondsSinceEpoch ~/
+                  1000,
+        };
+        final header =
+            base64Url.encode(utf8.encode('{"alg":"HS256","typ":"JWT"}'));
+        final encodedPayload =
+            base64Url.encode(utf8.encode(jsonEncode(payload)));
+        final tempToken = "$header.$encodedPayload.mock-signature";
+
+        developer.log("[LOG] ✅ 비번 재설정용 토큰 발급 완료: $tempToken");
+        handler.resolve(Response(
+          requestOptions: options,
+          statusCode: 200,
+          data: {"tempToken": tempToken},
+        ));
+      } else {
+        developer.log("[LOG] ❌ 비밀번호 인증 실패: ${_codeStore[email]}");
         handler.reject(DioException(
           requestOptions: options,
           type: DioExceptionType.badResponse,
@@ -70,6 +121,7 @@ class MockApiInterceptor extends Interceptor {
       String? id = options.data?["id"];
       String? password = options.data?["password"];
       String? email = options.data?["email"];
+      String? deviceToken = options.data?["deviceToken"];
 
       if (name == null || name.isEmpty) {
         handler.reject(DioException(
@@ -108,7 +160,20 @@ class MockApiInterceptor extends Interceptor {
         handler.reject(DioException(
           requestOptions: options,
           type: DioExceptionType.badResponse,
-          message: "아이디가 이미 존재합니다.",
+          response: Response(
+            requestOptions: options,
+            statusCode: 400,
+            data: {"message": "아이디가 이미 존재합니다."},
+          ),
+        ));
+        return;
+      }
+
+      if (deviceToken == null || deviceToken.isEmpty) {
+        handler.reject(DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          message: "디바이스토큰이 없습니다.",
         ));
         return;
       }
@@ -117,9 +182,10 @@ class MockApiInterceptor extends Interceptor {
         "email": email!,
         "name": name,
         "id": id,
-        "password": password
+        "password": password,
+        "deviceToken": deviceToken,
       };
-      developer.log("✅ Mock 회원가입 성공: ${_users[id]}");
+      developer.log("[LOG] ✅ Mock 회원가입 성공: ${_users[id]}");
       handler.resolve(Response(
         requestOptions: options,
         statusCode: 200,
@@ -168,7 +234,7 @@ class MockApiInterceptor extends Interceptor {
       ));
     } else if (path == '/profile') {
       final authHeader = options.headers['Authorization'];
-      developer.log("🔐 Authorization header: $authHeader");
+      developer.log("[LOG] 🔐 Authorization header: $authHeader");
 
       if (authHeader == null || !authHeader.toString().startsWith('Bearer ')) {
         handler.reject(DioException(
@@ -206,6 +272,33 @@ class MockApiInterceptor extends Interceptor {
     } else if (path == '/changePw') {
       String email = options.data?["email"] ?? '';
       String newPassword = options.data?["newPassword"] ?? '';
+      developer.log("[LOG] 🔐 changePw 요청 - email: $email, newPw: $newPassword",
+          name: "log");
+
+      // 임시 토큰을 Authorization 헤더로 받기
+      final authHeader = options.headers['Authorization'];
+      if (authHeader == null || !authHeader.toString().startsWith('Bearer ')) {
+        handler.reject(DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          message: "Authorization header missing or invalid",
+        ));
+        return;
+      }
+
+      final token = authHeader.toString().substring(7); // "Bearer " 이후의 토큰 추출
+      final payload = _decodeJwtPayload(token);
+      final emailFromToken = payload['email'];
+      developer.log("[LOG] 🔐 token payload email: $emailFromToken");
+      // 이메일이 토큰에서 추출된 이메일과 일치하는지 확인
+      if (email != emailFromToken) {
+        handler.reject(DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          message: "이메일이 토큰과 일치하지 않습니다.",
+        ));
+        return;
+      }
 
       final userEntry = _users.entries.firstWhere(
         (entry) => entry.value["email"] == email,
@@ -221,9 +314,10 @@ class MockApiInterceptor extends Interceptor {
         return;
       }
 
+      // 비밀번호 변경
       _users[userEntry.key]?["password"] = newPassword;
 
-      developer.log("✅ 비밀번호 변경 성공 (mock)");
+      developer.log("[LOG] ✅ 비밀번호 변경 성공 (mock)");
       handler.resolve(Response(requestOptions: options, statusCode: 200));
     }
 
@@ -264,25 +358,97 @@ class MockApiInterceptor extends Interceptor {
           ),
         );
       }
-    } else if (path == '/use-umbrella') {
-      final userId = options.data?['userId'];
-      final lockerId = options.data?['lockerId'];
+    } else if (options.path == '/locker-status') {
+      // 여기서 응답 시뮬레이션
+      final mockResponse = {
+        'action': 'rent', // 또는 'return'
+        'roomId': 'mockRoom123', // 웹소켓 룸 ID
+      };
 
-      developer.log("📡 [MOCK] 우산 사용 요청 - 사용자: $userId, 우산함: $lockerId");
+      return handler.resolve(
+        Response(
+          requestOptions: options,
+          data: mockResponse,
+          statusCode: 200,
+        ),
+      );
+    } else if (path == '/updateDeviceToken') {
+      final String? token = options.data?["token"];
+      final String? deviceTokenFromClient = options.data?["deviceToken"];
 
-      if (userId == null || lockerId == null) {
+      if (token == null || deviceTokenFromClient == null) {
         handler.reject(DioException(
           requestOptions: options,
           type: DioExceptionType.badResponse,
-          message: "userId 또는 lockerId 누락",
+          message: "토큰 또는 디바이스 토큰 누락",
         ));
         return;
       }
 
-      handler.resolve(Response(
+      final payload = _decodeJwtPayload(token);
+      final userId = payload['id'];
+
+      if (!_users.containsKey(userId)) {
+        handler.reject(DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          message: "사용자 정보 없음",
+        ));
+        return;
+      }
+
+      final user = _users[userId]!;
+      final serverToken = user["deviceToken"];
+
+      if (serverToken == null) {
+        // 디바이스 토큰이 없는 경우 새로 저장
+        user["deviceToken"] = deviceTokenFromClient;
+        developer.log("[LOG] 📱 디바이스 토큰 최초 저장: $deviceTokenFromClient");
+      } else if (serverToken != deviceTokenFromClient) {
+        // 서버 토큰과 클라이언트 토큰이 다른 경우 서버 값을 갱신
+        user["deviceToken"] = deviceTokenFromClient;
+        developer.log("[LOG] 🔄 디바이스 토큰 변경됨: $deviceTokenFromClient");
+      } else {
+        // 서버 토큰과 클라이언트 토큰이 같으면 아무것도 하지 않음
+        developer.log("[LOG] ✅ 디바이스 토큰 동일, 갱신 생략");
+      }
+
+      handler.resolve(Response(requestOptions: options, statusCode: 200));
+    } else if (options.path == '/lockers/status' && options.method == 'GET') {
+      return handler.resolve(Response(
         requestOptions: options,
         statusCode: 200,
-        data: {"message": "우산 사용 기록 완료"},
+        data: [
+          {
+            "lockerId": "locker1",
+            "latitude": 36.77203,
+            "longitude": 126.9316,
+            "umbrellaCount": 5,
+            "locationName": "미디어랩스"
+          },
+          {
+            "lockerId": "locker2",
+            "latitude": 36.77150,
+            "longitude": 126.9320,
+            "umbrellaCount": 2,
+            "locationName": "도서관 입구"
+          }
+        ],
+      ));
+    } else if (match != null && options.method == 'GET') {
+      final lockerId = match.group(1);
+
+      final mockData = {
+        "locker1": {"umbrellaCount": 3},
+        "locker2": {"umbrellaCount": 1},
+      };
+
+      final data = mockData[lockerId] ?? {"umbrellaCount": 0};
+
+      return handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: data,
       ));
     } else {
       handler.next(options);
@@ -297,205 +463,8 @@ class MockApiInterceptor extends Interceptor {
           utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
       return jsonDecode(payload);
     } catch (e) {
-      developer.log("❌ JWT 디코딩 실패: $e");
+      developer.log("[LOG] ❌ JWT 디코딩 실패: $e");
       return {};
     }
   }
 }
-
-// import 'dart:math';
-// import 'package:dio/dio.dart';
-// import 'dart:developer' as developer;
-
-// class MockApiInterceptor extends Interceptor {
-//   static final Map<String, String> _codeStore = {}; // 인증번호 저장
-//   static final Map<String, Map<String, String>> _users = {}; // 사용자 정보 저장
-
-//   // 로그인 요청 처리
-//   @override
-//   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-//     // 이메일 인증번호 전송 처리 (기존 코드)
-//     if (options.path == 'https://mock-api.com/send-email') {
-//       String email = options.data["email"];
-
-//       // 비밀번호 변경 요청인지 여부를 확인하는 로직
-//       bool isPasswordReset =
-//           options.queryParameters['isPasswordReset'] == 'true';
-
-//       if (isPasswordReset) {
-//         // 비밀번호 변경 시에는 이미 존재하는 이메일에 대해 인증번호를 발송
-//         if (email == 'sch@sch.ac.kr') {
-//           String code = (Random().nextInt(900000) + 100000).toString();
-//           _codeStore[email] = code;
-
-//           developer.log("📩 Mock 인증번호 발송 (비밀번호 변경): $code");
-//           handler.resolve(Response(requestOptions: options, statusCode: 200));
-//         } else {
-//           // 🔹 등록된 이메일이 아니면 인증번호 전송 실패
-//           developer.log("❌ 비밀번호 변경 실패 - 존재하지 않는 이메일: $email");
-//           handler.resolve(Response(requestOptions: options, statusCode: 404));
-//         }
-//       } else {
-//         // 🔹 일반 회원가입 로직
-//         if (email == 'sch@sch.ac.kr') {
-//           handler.resolve(Response(
-//               requestOptions: options, statusCode: 300)); // 이미 존재하는 이메일
-//         } else {
-//           // 새로운 이메일일 경우 인증번호 전송
-//           String code = (Random().nextInt(900000) + 100000).toString();
-//           _codeStore[email] = code;
-
-//           developer.log("📩 Mock 인증번호 발송: $code");
-//           handler.resolve(Response(requestOptions: options, statusCode: 200));
-//         }
-//       }
-//     }
-//     // 회원가입 요청 처리 (기존 코드)
-//     else if (options.path == 'https://mock-api.com/register') {
-//       String? name = options.data["name"];
-//       String? id = options.data["id"];
-//       String? password = options.data["password"];
-
-//       if (name == null || name.isEmpty) {
-//         developer.log("❌ 이름이 비어 있음!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "이름이 없습니다.",
-//         ));
-//         return;
-//       }
-
-//       if (id == null ||
-//           id.isEmpty ||
-//           id.length != 8 ||
-//           !RegExp(r'^\d{8}$').hasMatch(id)) {
-//         developer.log("❌ 아이디가 유효하지 않음!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "아이디는 8자리 숫자여야 합니다.",
-//         ));
-//         return;
-//       }
-
-//       if (password == null ||
-//           password.isEmpty ||
-//           password.length < 7 ||
-//           !RegExp(r'[@$!%*?&]').hasMatch(password)) {
-//         developer.log("❌ 비밀번호가 유효하지 않음!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "비밀번호는 7자 이상이고 특수문자가 포함되어야 합니다.",
-//         ));
-//         return;
-//       }
-
-//       // 아이디 중복 체크
-//       if (_users.containsKey(id)) {
-//         developer.log("❌ 이미 존재하는 아이디: $id");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "아이디가 이미 존재합니다.",
-//         ));
-//         return;
-//       }
-
-//       // 사용자 정보 저장
-//       _users[id] = {"name": name, "id": id, "password": password};
-
-//       developer.log("✅ Mock 회원가입 성공: ${_users[id]}");
-//       handler.resolve(Response(
-//         requestOptions: options,
-//         statusCode: 200,
-//         data: {"message": "회원가입 성공!"}, // 서버에서 성공 메시지 반환
-//       ));
-//     }
-
-//     // 로그인 요청 처리
-//     else if (options.path == 'https://mock-api.com/login') {
-//       String? id = options.data["id"];
-//       String? password = options.data["password"];
-
-//       if (id == null || id.isEmpty || password == null || password.isEmpty) {
-//         developer.log("❌ 아이디 또는 비밀번호가 비어 있음!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "아이디 또는 비밀번호가 비어 있습니다.",
-//         ));
-//         return;
-//       }
-
-//       // 아이디 존재 여부 체크
-//       if (!_users.containsKey(id)) {
-//         developer.log("❌ 아이디가 존재하지 않음!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "아이디가 존재하지 않습니다.",
-//         ));
-//         return;
-//       }
-
-//       // 비밀번호 일치 여부 체크
-//       if (_users[id]?["password"] != password) {
-//         developer.log("❌ 비밀번호가 틀림!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "비밀번호가 틀립니다.",
-//         ));
-//         return;
-//       }
-
-//       // 로그인 성공 처리
-//       developer.log("✅ 로그인 성공: ${_users[id]}");
-//       handler.resolve(Response(
-//         requestOptions: options,
-//         statusCode: 200,
-//         data: {"message": "로그인 성공!"}, // 서버에서 로그인 성공 메시지 반환
-//       ));
-//     }
-
-//     // 인증번호 검증 요청 처리 (기존 코드)
-//     else if (options.path == 'https://mock-api.com/verify-code') {
-//       String? email = options.data["email"];
-//       String? enteredCode = options.data["code"]; // 'otp' 대신 'code'로 수정
-
-//       if (email == null ||
-//           email.isEmpty ||
-//           enteredCode == null ||
-//           enteredCode.isEmpty) {
-//         developer.log("❌ 검증 실패: 이메일 또는 인증번호가 비어 있음!");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "이메일 또는 인증번호 값이 없습니다.",
-//         ));
-//         return;
-//       }
-
-//       // 인증번호 검증
-//       if (_codeStore[email] == enteredCode) {
-//         developer.log("✅ 인증번호 검증 성공!");
-//         handler.resolve(Response(
-//             requestOptions: options, statusCode: 200)); // 성공 시 200 상태 코드 반환
-//       } else {
-//         developer.log("❌ 인증번호 검증 실패! 저장된 인증번호: ${_codeStore[email]}");
-//         handler.reject(DioException(
-//           requestOptions: options,
-//           type: DioExceptionType.badResponse,
-//           message: "인증번호가 올바르지 않습니다. 다시 입력해주세요.",
-//         ));
-//       }
-//     }
-
-//     // 그 외의 요청 처리
-//     else {
-//       handler.next(options);
-//     }
-//   }
-// }
