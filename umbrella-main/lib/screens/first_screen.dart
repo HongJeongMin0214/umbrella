@@ -55,27 +55,13 @@ class FirstScreenState extends State<FirstScreen>
     });
   }
 
-// 로그인 상태 확인 후 디바이스 토큰을 가져와 서버에 갱신
-  // Future<void> _getAndSendDeviceToken(UserProvider userProvider) async {
-  //   final FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  //   // 디바이스 토큰 가져오기
-  //   String? deviceToken = await messaging.getToken();
-  //   developer.log("[LOG] 디바이스토큰: $deviceToken");
-  //   if (deviceToken != null) {
-  //     // 서버로 디바이스 토큰 보내기
-  //     await context
-  //         .read<ApiService>()
-  //         .updateDeviceToken(userProvider.token!, deviceToken);
-  //   }
-  // }
   Future<void> _getAndSendDeviceToken(UserProvider userProvider) async {
     try {
       final FirebaseMessaging messaging = FirebaseMessaging.instance;
 
       // 디바이스 토큰 가져오기 (5초 제한)
       String? deviceToken =
-          await messaging.getToken().timeout(Duration(seconds: 5));
+          await messaging.getToken().timeout(const Duration(seconds: 5));
 
       if (!mounted) return;
       if (deviceToken != null) {
@@ -86,9 +72,9 @@ class FirstScreenState extends State<FirstScreen>
         await context
             .read<ApiService>()
             .updateDeviceToken(userProvider.token!, deviceToken)
-            .timeout(Duration(seconds: 5));
+            .timeout(const Duration(seconds: 5));
       }
-    } catch (e, stack) {
+    } catch (e) {
       developer.log("[LOG] 디바이스 토큰 처리 중 오류: $e");
     }
   }

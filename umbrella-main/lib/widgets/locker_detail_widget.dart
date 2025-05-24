@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-class LockerDetailWidget extends StatelessWidget {
+class LockerDetailWidget extends StatefulWidget {
+  final DateTime? releaseDate;
+  final bool isOverdue;
   final String locationName;
   final int umbrellaCount;
   final int emptySlotCount;
@@ -8,11 +12,75 @@ class LockerDetailWidget extends StatelessWidget {
 
   const LockerDetailWidget({
     super.key,
+    this.releaseDate,
+    required this.isOverdue,
     required this.locationName,
     required this.umbrellaCount,
     required this.emptySlotCount,
     required this.onTapUse,
   });
+  @override
+  State<LockerDetailWidget> createState() => _LockerDetailWidgetState();
+}
+
+class _LockerDetailWidgetState extends State<LockerDetailWidget> {
+  Timer? _timer;
+  String? _countdownText;
+  bool _isButtonDisabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.isOverdue && widget.releaseDate != null) {
+      _isButtonDisabled = true;
+      _startCountdown(widget.releaseDate!);
+    }
+  }
+
+  void _startCountdown(DateTime releaseDate) {
+    _updateCountdown(releaseDate); // 초기 1회 호출
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateCountdown(releaseDate);
+    });
+  }
+
+  void _updateCountdown(DateTime releaseDate) {
+    final now = DateTime.now();
+    final difference = releaseDate.difference(now);
+
+    if (!mounted) return;
+
+    if (difference.isNegative) {
+      // 시간이 지났으면 버튼 활성화
+      setState(() {
+        _isButtonDisabled = false;
+        _countdownText = null;
+        _timer?.cancel();
+      });
+    } else {
+      setState(() {
+        if (difference.inDays >= 1) {
+          _countdownText = "${difference.inDays}일 후 이용 가능";
+        } else {
+          final hours =
+              difference.inHours.remainder(24).toString().padLeft(2, '0');
+          final minutes =
+              difference.inMinutes.remainder(60).toString().padLeft(2, '0');
+          final seconds =
+              difference.inSeconds.remainder(60).toString().padLeft(2, '0');
+          _countdownText = "$hours:$minutes:$seconds 후 이용 가능";
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +107,7 @@ class LockerDetailWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                locationName,
+                widget.locationName,
                 style: const TextStyle(
                   fontSize: 18,
                   color: Color.fromARGB(255, 78, 78, 78),
@@ -56,7 +124,7 @@ class LockerDetailWidget extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      "$umbrellaCount",
+                      "${widget.umbrellaCount}",
                       style: const TextStyle(
                         fontSize: 40,
                         color: Color(0xFF0061FF),
@@ -78,7 +146,7 @@ class LockerDetailWidget extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      "$emptySlotCount",
+                      "${widget.emptySlotCount}",
                       style: const TextStyle(
                         fontSize: 40,
                         color: Color(0xFFFF0000),
@@ -96,16 +164,16 @@ class LockerDetailWidget extends StatelessWidget {
             width: double.infinity,
             height: 40,
             child: ElevatedButton(
-              onPressed: onTapUse,
+              onPressed: _isButtonDisabled ? null : widget.onTapUse,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00B2FF),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(40),
                 ),
               ),
-              child: const Text(
-                "이용하기",
-                style: TextStyle(
+              child: Text(
+                _countdownText ?? "이용하기",
+                style: const TextStyle(
                   fontSize: 18,
                   color: Colors.white,
                   fontWeight: FontWeight.w600,

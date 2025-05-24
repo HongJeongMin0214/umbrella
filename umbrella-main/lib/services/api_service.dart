@@ -3,9 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:umbrella/provider/user_provider.dart';
-import 'auth_service.dart';
 import 'mock_api_interceptor.dart';
-import 'package:provider/provider.dart';
 import 'package:umbrella/screens/main_screen.dart';
 
 class ApiService {
@@ -268,14 +266,14 @@ class ApiService {
 
   /// ✅ 사용자 프로필 조회
   Future<Map<String, dynamic>?> getUserProfile(BuildContext context) async {
-    final user_token = context.read<UserProvider>().token;
-    if (user_token == null) return null;
+    final userToken = context.read<UserProvider>().token;
+    if (userToken == null) return null;
 
     try {
       final response = await _dio.get(
         '/profile',
         options: Options(headers: {
-          'Authorization': 'Bearer $user_token',
+          'Authorization': 'Bearer $userToken',
         }),
       );
 
@@ -344,7 +342,7 @@ class ApiService {
       }
     } catch (e) {
       developer.log("[LOG] ❌ 우산 사용 정보 전송 실패: $e");
-      throw e; // 오류 발생 시 다시 던짐
+      rethrow; // 오류 발생 시 다시 던짐
     }
   }
 
@@ -382,7 +380,7 @@ class ApiService {
       } else {
         developer.log('디바이스 토큰 갱신 실패: ${response.statusCode}');
       }
-    } catch (e, stack) {
+    } catch (e) {
       developer.log('디바이스 토큰 갱신 중 오류 발생: $e');
     }
   }
@@ -413,6 +411,30 @@ class ApiService {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> checkOverdueStatus(String token) async {
+    final response = await _dio.get(
+      '/overdue',
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      // 응답 데이터가 Map 형태인지 확인
+      if (response.data is Map<String, dynamic>) {
+        print('response.data: ${response.data}');
+        return response.data;
+      } else {
+        throw Exception('Unexpected response format: not a JSON object');
+      }
+    } else {
+      throw Exception(
+          'Failed to check overdue status (status: ${response.statusCode})');
     }
   }
 }

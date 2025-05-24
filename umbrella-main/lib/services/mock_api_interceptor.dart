@@ -1,12 +1,29 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:math';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dio/dio.dart';
 
 class MockApiInterceptor extends Interceptor {
   static final Map<String, String> _codeStore = {};
-  static final Map<String, Map<String, String>> _users = {};
+  static final Map<String, Map<String, String>> _users = {
+    "20221317": {
+      "email": 'jam6579@sch.ac.kr',
+      "name": '홍정민',
+      "id": '20221317',
+      "password": '111111!',
+      "deviceToken":
+          'e_4_Mw_1RwWFszxJXBjoPm:APA91bHegritT_66ld-oXb2huwWE87B53cLBhF6gqoDiXFq6RGFARMc0NDvoqYZNW8gmjAGMQu3WwAvZmzP9BA39Nrn2Sarm1SY10LwmtXFWhhW4q0qjgnM',
+    },
+    "20221318": {
+      "email": 'jam657961@sch.ac.kr',
+      "name": '임승현',
+      "id": '20221318',
+      "password": '111111!',
+      "deviceToken":
+          'e_4_Mw_1RwWFszxJXBjoPm:APA91bHegritT_66ld-oXb2huwWE87B53cLBhF6gqoDiXFq6RGFARMc0NDvoqYZNW8gmjAGMQu3WwAvZmzP9BA39Nrn2Sarm1SY10LwmtXFWhhW4q0qjgnM',
+    },
+  };
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -92,9 +109,10 @@ class MockApiInterceptor extends Interceptor {
         final payload = {
           "id": userEntry.key,
           "email": email,
-          "exp":
-              DateTime.now().add(Duration(minutes: 5)).millisecondsSinceEpoch ~/
-                  1000,
+          "exp": DateTime.now()
+                  .add(const Duration(minutes: 5))
+                  .millisecondsSinceEpoch ~/
+              1000,
         };
         final header =
             base64Url.encode(utf8.encode('{"alg":"HS256","typ":"JWT"}'));
@@ -450,6 +468,60 @@ class MockApiInterceptor extends Interceptor {
         statusCode: 200,
         data: data,
       ));
+    } // ✅ 연체 여부 확인용 API 처리
+    else if (path == '/overdue') {
+      final authHeader = options.headers['Authorization'];
+      if (authHeader == null || !authHeader.toString().startsWith('Bearer ')) {
+        handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            message: "인증 토큰이 없습니다.",
+          ),
+        );
+        return;
+      }
+
+      final token = authHeader.toString().substring(7);
+      final parts = token.split('.');
+      if (parts.length < 2) {
+        handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            message: "잘못된 토큰 형식입니다.",
+          ),
+        );
+        return;
+      }
+
+      final payload = jsonDecode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+      final userId = payload['id'];
+
+      if (userId == '20221317') {
+        const releaseDateStr = "2025-05-20T23:59:59";
+        final releaseDate = DateTime.parse(releaseDateStr);
+
+        handler.resolve(Response(
+          requestOptions: options,
+          statusCode: 200,
+          data: {
+            "isOverdue": true,
+            "releaseDate": releaseDate.toIso8601String(),
+          },
+        ));
+      } else {
+        // ✅ 그 외 유저는 연체 아님
+        handler.resolve(Response(
+          requestOptions: options,
+          statusCode: 200,
+          data: {
+            "isOverdue": false,
+          },
+        ));
+      }
+      return;
     } else {
       handler.next(options);
     }

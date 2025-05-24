@@ -10,7 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:umbrella/provider/user_provider.dart';
 import 'package:umbrella/services/api_service.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+String? initialNotificationType;
 void main() async {
   WidgetsFlutterBinding
       .ensureInitialized(); //Flutter의 바인딩(내부 연결 시스템) 준비 완료. = Flutter 앱이 본격적으로 시작되기 전에 필요한 준비를 완료. (앱 시작 전에 꼭 초기화해야 하는 SharedPreferences (앱에 저장된 데이터 불러올 때) 때문에 사용)
@@ -18,6 +20,16 @@ void main() async {
     await Firebase.initializeApp();
   } catch (e) {
     debugPrint("Firebase 초기화 실패: $e");
+  }
+  RemoteMessage? initialMessage =
+      await FirebaseMessaging.instance.getInitialMessage();
+
+  if (initialMessage != null) {
+    // 앱이 종료되었을 때 푸시 클릭으로 진입한 경우
+    final type = initialMessage.data['type'];
+    if (type == 'expired') {
+      initialNotificationType = 'expired';
+    }
   }
   final userProvider = UserProvider();
   await userProvider.loadUserFromStorage(); //앱 시작 시 사용자 데이터 로드

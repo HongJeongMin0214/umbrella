@@ -4,20 +4,19 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:umbrella/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:umbrella/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:umbrella/services/api_service.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:developer' as developer;
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:nfc_manager/nfc_manager.dart';
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:nfc_manager/platform_tags.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:umbrella/widgets/locker_detail_widget.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:umbrella/main.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -33,12 +32,272 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController =
       AnimatedMapController(vsync: this, mapController: _mapController);
   bool _locationPermissionGranted = false;
+  bool _isOverdue = false;
+  DateTime? _releaseDate;
 
   @override
   void initState() {
     super.initState();
-    _requestPermission();
+    requestPermissions();
     fetchAllLockerStatuses();
+    // simulatePushNotification(); // 테스트용 푸시 알림 실행 나중에 지우기
+    // 앱 처음 진입 시 알림 유형 확인
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkAndShowOverduePopup();
+      if (initialNotificationType == 'expired') {
+        _showExpiredPopup();
+        initialNotificationType = null; // 팝업을 한 번만 띄우도록 초기화
+      }
+    });
+
+    // 포그라운드에서 알림 수신 시 처리
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final type = message.data['type'];
+      if (type == 'expired') {
+        _showExpiredPopup();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+// 구글 설문조사 URL
+  final String googleSurveyUrl =
+      "https://docs.google.com/forms/d/e/1FAIpQLSd***********/viewform";
+
+  // 첫번째 팝업 (예/아니오)
+  void _showExpiredPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+            const SizedBox(height: 16),
+            const Text(
+              "우산 반납 기간을 초과하였습니다.\n우산을 분실하셨나요?",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, fontSize: 17),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.lightBlue,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    if (await canLaunchUrl(Uri.parse(googleSurveyUrl))) {
+                      await launchUrl(Uri.parse(googleSurveyUrl),
+                          mode: LaunchMode.externalApplication);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('설문조사 페이지를 열 수 없습니다.')));
+                    }
+                  },
+                  child: const Text("예", style: TextStyle(color: Colors.white)),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade300,
+                    foregroundColor: Colors.black54,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showReturnPleasePopup();
+                  },
+                  child: const Text("아니오"),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 두번째 팝업 (아니오 눌렀을 때)
+  void _showReturnPleasePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: EdgeInsets.zero,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.red.shade400,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: const Icon(Icons.warning_amber_rounded,
+                  size: 48, color: Colors.white),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "우산을 반납해주세요.",
+              style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                "우산을 반납하지 않았습니다.\n대여한 우산 반납 후, 우산 대여가 가능합니다.",
+                style: TextStyle(fontSize: 14, color: Colors.black54),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black54,
+                backgroundColor: Colors.grey.shade300,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text("확인"),
+            ),
+            const SizedBox(height: 15),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void checkAndShowOverduePopup() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final token = userProvider.token;
+
+    if (token == null) return;
+
+    try {
+      final overdueInfo = await apiService.checkOverdueStatus(token);
+      final isOverdue = overdueInfo['isOverdue'] == true;
+      final releaseDateString = overdueInfo['releaseDate'];
+
+      if (isOverdue && releaseDateString != null) {
+        final releaseDate = DateTime.parse(releaseDateString);
+        final now = DateTime.now();
+
+        if (releaseDate.isAfter(now)) {
+          // releaseDate가 현재보다 미래라서 타이머 돌릴 수 있는 상태
+          if (mounted) {
+            setState(() {
+              _isOverdue = true;
+              _releaseDate = releaseDate;
+            });
+            _showOverduePopup(releaseDate);
+          }
+        } else {
+          // releaseDate가 현재보다 과거 => 이미 연체 기간이 지났음
+          developer.log('연체 패널티 기간이 종료됨: $releaseDate');
+          if (mounted) {
+            setState(() {
+              _isOverdue = false;
+              _releaseDate = null; // 타이머 돌릴 날짜가 없으니 null 처리하거나 다른 상태로
+            });
+            // 팝업 띄울 필요 x
+          }
+        }
+      } else {
+        // 연체가 아님
+        if (mounted) {
+          setState(() {
+            _isOverdue = false;
+            _releaseDate = null;
+          });
+        }
+      }
+    } catch (e) {
+      print('연체 상태 확인 실패: $e');
+    }
+  }
+
+  void _showOverduePopup(DateTime releaseDate) {
+    final formattedDateTime =
+        DateFormat('yyyy년 MM월 dd일 HH시 mm분').format(releaseDate);
+    final message = '$formattedDateTime 부터 이용 가능합니다.';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 27, 24, 10),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 51, color: Color(0xFF757575)),
+            const SizedBox(height: 16),
+            const Text(
+              "연체로 인한 이용 제한 상태입니다.",
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF757575),
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 16,
+                color:
+                    releaseDate != null ? Colors.lightBlue : Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.lightBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text("확인"),
+          ),
+        ],
+      ),
+    );
   }
 
   List<LockerStatus> allLockerStatus = [];
@@ -130,7 +389,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     if (cachedMessage == null) return null;
 
     final textRecord = cachedMessage.records.firstWhere(
-      (record) => utf8.decode(record.type) == 'text/plain',
+      (record) => utf8.decode(record.type) == 'T',
       orElse: () => throw Exception("텍스트 형식 NDEF 데이터가 없습니다."),
     );
 
@@ -171,32 +430,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           }
 
           // 서버에 lockerId + token 전송
-          final response = await apiService.sendLockerIdAndToken(
+          await apiService.sendLockerIdAndToken(
             context,
             lockerId,
           );
 
-          final action = response['action'];
-          final webSocketRoomId = response['roomId'];
-
-          final uri = Uri.parse('http://192.168.0.10:3000/show').replace(
-            queryParameters: {
-              'action': action,
-              'lockerId': lockerId,
-              'roomId': webSocketRoomId,
-            },
-          );
-
-          final success = await launchUrl(uri);
-          if (success) {
-            developer.log('[LOG] ✅ 웹 페이지 요청 성공: $uri');
-            Navigator.pop(context); // 바텀시트 닫기
-          } else {
-            developer.log('[LOG] ❌ 웹 페이지 열기 실패');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('웹 페이지를 열 수 없습니다.')),
-            );
-          }
+          // 서버 응답 성공 시 바텀시트 닫기
+          Navigator.pop(context);
         } catch (e) {
           developer.log("[LOG] ❌ 서버 통신 에러: $e");
           ScaffoldMessenger.of(context).showSnackBar(
@@ -213,10 +453,22 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _requestPermission() async {
+  Future<void> requestPermissions() async {
+    await _requestLocationPermission();
+    await _requestNotificationPermission(); // Android 13 이상 대응
+  }
+
+  Future<void> _requestLocationPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // 사용자가 "다시 묻지 않음" 선택 → 설정으로 유도
+      await Geolocator.openAppSettings();
+      return;
     }
 
     if (permission == LocationPermission.whileInUse ||
@@ -225,6 +477,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       setState(() {
         _locationPermissionGranted = true;
       });
+    }
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    if (await Permission.notification.isDenied ||
+        await Permission.notification.isPermanentlyDenied) {
+      final status = await Permission.notification.request();
+      if (status.isDenied || status.isPermanentlyDenied) {
+        await openAppSettings(); // 유저가 꺼놓은 경우 설정으로 유도
+      }
     }
   }
 
@@ -309,6 +571,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     top: Radius.circular(30)),
                               ),
                               builder: (_) => LockerDetailWidget(
+                                isOverdue: _isOverdue,
+                                releaseDate: _releaseDate,
                                 locationName: locker.locationName ?? '알 수 없음',
                                 umbrellaCount: umbrellaCount,
                                 emptySlotCount: emptySlotCount,
@@ -324,8 +588,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                   content: Text("세부 우산함 정보를 불러오는 데 실패했습니다.")),
                             );
                           } finally {
-                            if (mounted)
+                            if (mounted) {
                               setState(() => isFetching = false); // 다시 클릭 가능하게
+                            }
                           }
                         },
                         child: Column(
