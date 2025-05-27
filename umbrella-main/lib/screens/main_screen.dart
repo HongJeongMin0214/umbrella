@@ -17,6 +17,7 @@ import 'package:umbrella/main.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -40,9 +41,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     super.initState();
     requestPermissions();
     fetchAllLockerStatuses();
-    // simulatePushNotification(); // 테스트용 푸시 알림 실행 나중에 지우기
-    // 앱 처음 진입 시 알림 유형 확인
+    loadFavorites();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       checkAndShowOverduePopup();
       if (initialNotificationType == 'expired') {
         _showExpiredPopup();
@@ -657,6 +658,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   right: 16,
                   child: _buildSearchButton(),
                 ),
+                if (isSearchOpen) _buildSearchOverlay(),
                 Positioned(
                   bottom: 30,
                   right: 16,
@@ -775,6 +777,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   final userProvider = context.read<UserProvider>();
                   await userProvider.logout();
                   if (context.mounted) {
+                    setState(() {
+                      favoriteLockers.clear();
+                    });
                     context.go('/'); // 첫 화면으로 이동
                   }
                 },
@@ -883,12 +888,33 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
+  String searchQuery = '';
+  List<String> favoriteLockers = [];
+  bool isSearchOpen = false;
+
+  Future<void> loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = context.read<UserProvider>().userId;
+    if (userId != null) {
+      final storedFavorites = prefs.getStringList('favorites_$userId');
+      setState(() {
+        favoriteLockers = storedFavorites ?? [];
+      });
+    }
+  }
+
   // 검색 버튼 (돋보기)
   Widget _buildSearchButton() {
     return IconButton(
       icon: const Icon(Icons.search, size: 30, color: Colors.white),
       onPressed: () {
-        print("검색 버튼 클릭됨");
+        setState(() {
+          isSearchOpen = !isSearchOpen;
+          if (isSearchOpen) {
+            searchQuery = '';
+            _searchController.clear(); // ✅ 텍스트 필드 초기화
+          }
+        });
       },
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.all(const Color(0xFF26539C)),
@@ -896,6 +922,186 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         padding: WidgetStateProperty.all(const EdgeInsets.all(10)),
       ),
     );
+  }
+
+  final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  Widget _buildSearchOverlay() {
+    final filtered = allLockerStatus.where((locker) {
+      return locker.locationName.contains(searchQuery);
+    }).toList();
+
+    return Positioned(
+      top: 100,
+      left: 16,
+      right: 16,
+      child: Column(children: [
+        // 검색창
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back_ios, color: Colors.black87),
+                onPressed: () => setState(() => isSearchOpen = false),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: '우산함 위치 이름 검색',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.close, color: Colors.black87),
+                onPressed: () {
+                  setState(() {
+                    searchQuery = '';
+                    _searchController.clear(); // ✅ 같이 초기화
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // 리스트
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ListView.separated(
+            // ⬅️ 여기!
+            shrinkWrap: true,
+            itemCount: filtered.length,
+            itemBuilder: (context, index) {
+              final locker = filtered[index];
+              final isFavorite = favoriteLockers.contains(locker.lockerId);
+
+              return ListTile(
+                title: Text(
+                  locker.locationName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                trailing: IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.star : Icons.star_border,
+                    color: isFavorite ? Color(0xFFFFD700) : Colors.grey[400],
+                  ),
+                  onPressed: () => toggleFavorite(locker.lockerId),
+                ),
+                onTap: () async {
+                  handleLockerSelection(locker);
+                },
+              );
+            },
+            separatorBuilder: (context, index) => Divider(
+              height: 1,
+              color: Colors.grey[300], // ✨ 얇고 연한 선
+              indent: 16,
+              endIndent: 16,
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  bool _isHandlingTap = false;
+
+  Future<void> handleLockerSelection(locker) async {
+    if (_isHandlingTap) return;
+    _isHandlingTap = true;
+
+    try {
+      setState(() => isSearchOpen = false);
+
+      // 지도 이동 먼저
+      await _animatedMapController.animateTo(
+        dest: LatLng(locker.latitude + 0.0005, locker.longitude),
+        zoom: _mapController.camera.zoom,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+
+      // 상태 가져오기
+      await fetchAndSetLockerStatus(locker.lockerId);
+
+      // 모달 띄우기
+      if (!mounted) return;
+      await showModalBottomSheet(
+        context: navigatorKey.currentContext ?? context, // <-- 안정적인 context
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        builder: (_) => LockerDetailWidget(
+          isOverdue: _isOverdue,
+          releaseDate: _releaseDate,
+          locationName: locker.locationName,
+          umbrellaCount: umbrellaCount,
+          emptySlotCount: emptySlotCount,
+          onTapUse: () {
+            Navigator.pop(context);
+            onTapUseButton(context);
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error handling locker tap: $e');
+    } finally {
+      _isHandlingTap = false;
+    }
+  }
+
+  void toggleFavorite(String lockerId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = context.read<UserProvider>().userId;
+
+    if (userId == null) return; // ✅ null 방어
+
+    setState(() {
+      if (favoriteLockers.contains(lockerId)) {
+        favoriteLockers.remove(lockerId);
+      } else {
+        favoriteLockers.add(lockerId);
+      }
+
+      prefs.setStringList('favorites_$userId', favoriteLockers);
+
+      allLockerStatus.sort((a, b) {
+        final aFav = favoriteLockers.contains(a.lockerId) ? 0 : 1;
+        final bFav = favoriteLockers.contains(b.lockerId) ? 0 : 1;
+        return aFav.compareTo(bFav);
+      });
+    });
   }
 
   // 하단 우측 아이콘 버튼 3개 (날씨, 클립, 좌표)
@@ -1084,13 +1290,31 @@ class LockerStatus {
       required this.umbrellaCount,
       required this.locationName});
 
+  // 고정 위치 정보 Map
+  static const Map<String, LockerMeta> _lockerMetaMap = {
+    'locker1': LockerMeta(36.77203, 126.9316, '미디어랩스'),
+    'locker2': LockerMeta(36.77150, 126.9320, '도서관 입구'),
+    // 필요한 만큼 추가 가능
+  };
+
   factory LockerStatus.fromJson(Map<String, dynamic> json) {
+    final lockerId = json['lockerId'];
+    final meta = _lockerMetaMap[lockerId];
+
     return LockerStatus(
-      lockerId: json['lockerId'],
-      latitude: json['latitude'].toDouble(),
-      longitude: json['longitude'].toDouble(),
+      lockerId: lockerId,
+      latitude: meta?.latitude ?? 0.0,
+      longitude: meta?.longitude ?? 0.0,
+      locationName: meta?.locationName ?? 'Unknown',
       umbrellaCount: json['umbrellaCount'],
-      locationName: json['locationName'],
     );
   }
+}
+
+class LockerMeta {
+  final double latitude;
+  final double longitude;
+  final String locationName;
+
+  const LockerMeta(this.latitude, this.longitude, this.locationName);
 }

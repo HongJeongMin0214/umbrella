@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:umbrella/provider/user_provider.dart';
 import 'mock_api_interceptor.dart';
 import 'package:umbrella/screens/main_screen.dart';
+import 'auth_service.dart';
 
 class ApiService {
   final Dio _dio = Dio();

@@ -439,17 +439,11 @@ class MockApiInterceptor extends Interceptor {
         data: [
           {
             "lockerId": "locker1",
-            "latitude": 36.77203,
-            "longitude": 126.9316,
             "umbrellaCount": 5,
-            "locationName": "미디어랩스"
           },
           {
             "lockerId": "locker2",
-            "latitude": 36.77150,
-            "longitude": 126.9320,
             "umbrellaCount": 2,
-            "locationName": "도서관 입구"
           }
         ],
       ));
@@ -500,7 +494,7 @@ class MockApiInterceptor extends Interceptor {
       final userId = payload['id'];
 
       if (userId == '20221317') {
-        const releaseDateStr = "2025-05-20T23:59:59";
+        const releaseDateStr = "2025-06-20T23:59:59";
         final releaseDate = DateTime.parse(releaseDateStr);
 
         handler.resolve(Response(
