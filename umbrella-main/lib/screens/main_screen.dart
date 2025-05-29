@@ -18,6 +18,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umbrella/widgets/use_button.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -42,20 +43,20 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     requestPermissions();
     fetchAllLockerStatuses();
     loadFavorites();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.loadUserFromStorage(); // ✅ 토큰 로딩 보장
+      print("불러온 토큰: ${userProvider.token}");
+      print("디코딩된 사용자 정보: ${userProvider.userData}");
+      await fetchAndSetOverdueStatus(); // ✅ 그 후에 연체 상태 불러오기
+
       if (!mounted) return;
+
       checkAndShowOverduePopup();
       if (initialNotificationType == 'expired') {
         _showExpiredPopup();
-        initialNotificationType = null; // 팝업을 한 번만 띄우도록 초기화
-      }
-    });
-
-    // 포그라운드에서 알림 수신 시 처리
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final type = message.data['type'];
-      if (type == 'expired') {
-        _showExpiredPopup();
+        initialNotificationType = null;
       }
     });
   }
@@ -196,6 +197,35 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
+  Future<void> fetchAndSetOverdueStatus() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final token = userProvider.token;
+      print("전송할 토큰: $token");
+
+      if (token == null) {
+        throw Exception("로그인 정보가 없습니다.");
+      }
+
+      final status = await apiService.checkOverdueStatus(token);
+      print("초기 로딩: isOverdue=$_isOverdue, releaseDate=$_releaseDate");
+
+      setState(() {
+        _isOverdue = status['isOverdue'];
+        _releaseDate = status['releaseDate'] != null
+            ? DateTime.parse(status['releaseDate'])
+            : null;
+      });
+      print("setState 이후: isOverdue=$_isOverdue, releaseDate=$_releaseDate");
+      print("연체 정보 불러오기 성공");
+    } catch (e) {
+      print("연체 정보 불러오기 실패: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("연체 정보를 불러오는 데 실패했습니다.")),
+      );
+    }
+  }
+
   void checkAndShowOverduePopup() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final token = userProvider.token;
@@ -219,6 +249,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               _releaseDate = releaseDate;
             });
             _showOverduePopup(releaseDate);
+
+            /// 🔽 여기서 타이머 시작
+            final duration = releaseDate.difference(now);
+            Future.delayed(duration, () {
+              if (mounted) {
+                setState(() {
+                  _isOverdue = false;
+                  _releaseDate = null;
+                });
+              }
+            });
           }
         } else {
           // releaseDate가 현재보다 과거 => 이미 연체 기간이 지났음
@@ -660,9 +701,33 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
                 if (isSearchOpen) _buildSearchOverlay(),
                 Positioned(
-                  bottom: 30,
+                  bottom: 90,
                   right: 16,
                   child: _buildFloatingButtons(),
+                ),
+                // 조건: _releaseDate와 _isOverdue는 마커를 누른 후에만 설정됨
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: (_releaseDate == null && _isOverdue)
+                      ? const SizedBox(height: 50) // releaseDate 아직 안 들어온 상태
+                      : UseButton(
+                          isOverdue: _isOverdue,
+                          releaseDate: _releaseDate,
+                          onPressed: () {
+                            if (_isOverdue && _releaseDate != null) return;
+                            onTapUseButton(context);
+                          },
+                          onOverdueLifted: () {
+                            if (mounted) {
+                              setState(() {
+                                _isOverdue = false;
+                                _releaseDate = null;
+                              });
+                            }
+                          },
+                        ),
                 ),
               ],
             ),

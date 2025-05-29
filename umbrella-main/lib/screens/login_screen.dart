@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:umbrella/services/api_service.dart';
 import 'package:umbrella/services/auth_service.dart';
+import 'dart:developer' as developer;
 import 'package:umbrella/provider/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,33 +21,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 로그인 버튼 클릭 시 호출되는 함수
   void _validateAndLogin() async {
-    String id = _idController.text.trim();
-    String password = _passwordController.text.trim();
+    try {
+      developer.log("🚀 로그인 시도");
 
-    if (id.isEmpty || password.isEmpty) {
+      String id = _idController.text.trim();
+      String password = _passwordController.text.trim();
+
+      if (id.isEmpty || password.isEmpty) {
+        setState(() {
+          _errorMessage = '아이디와 비밀번호를 입력해 주세요.';
+        });
+        return;
+      }
+
+      final apiService = context.read<ApiService>();
+      final (success, message) =
+          await apiService.loginUser(context, id, password);
+      developer.log("✅ 로그인 결과: $success / $message");
+      if (!mounted) return;
+
+      developer.log("✅ 로그인 결과: $success / $message");
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.green),
+        );
+        context.go('/main');
+      } else {
+        setState(() {
+          _errorMessage = message;
+        });
+      }
+    } catch (e) {
+      developer.log("❗ 로그인 중 예외: ${e.toString()}");
       setState(() {
-        _errorMessage = '아이디와 비밀번호를 입력해 주세요.';
-      });
-      return;
-    }
-
-    // 로그인 시도
-    final apiService = context.read<ApiService>();
-    bool success = await apiService.loginUser(context, id, password);
-
-    if (!mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("로그인 성공!"),
-        backgroundColor: Colors.green,
-      ));
-
-      context.go('/main'); // 메인 화면 이동
-    } else {
-      setState(() {
-        //setState() 안에 작성된 코드는 상태를 변경하는 코드 ex.필요한 데이터를 갱신
-        _errorMessage = '아이디 또는 비밀번호가 틀렸습니다.';
+        _errorMessage = "로그인 처리 중 오류: ${e.toString()}";
       });
     }
   }

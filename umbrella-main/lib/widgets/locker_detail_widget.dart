@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:umbrella/widgets/use_button.dart';
 
 class LockerDetailWidget extends StatefulWidget {
   final DateTime? releaseDate;
@@ -24,64 +25,6 @@ class LockerDetailWidget extends StatefulWidget {
 }
 
 class _LockerDetailWidgetState extends State<LockerDetailWidget> {
-  Timer? _timer;
-  String? _countdownText;
-  bool _isButtonDisabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.isOverdue && widget.releaseDate != null) {
-      _isButtonDisabled = true;
-      _startCountdown(widget.releaseDate!);
-    }
-  }
-
-  void _startCountdown(DateTime releaseDate) {
-    _updateCountdown(releaseDate); // 초기 1회 호출
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateCountdown(releaseDate);
-    });
-  }
-
-  void _updateCountdown(DateTime releaseDate) {
-    final now = DateTime.now();
-    final difference = releaseDate.difference(now);
-
-    if (!mounted) return;
-
-    if (difference.isNegative) {
-      // 시간이 지났으면 버튼 활성화
-      setState(() {
-        _isButtonDisabled = false;
-        _countdownText = null;
-        _timer?.cancel();
-      });
-    } else {
-      setState(() {
-        if (difference.inDays >= 1) {
-          _countdownText = "${difference.inDays}일 후 이용 가능";
-        } else {
-          final hours =
-              difference.inHours.remainder(24).toString().padLeft(2, '0');
-          final minutes =
-              difference.inMinutes.remainder(60).toString().padLeft(2, '0');
-          final seconds =
-              difference.inSeconds.remainder(60).toString().padLeft(2, '0');
-          _countdownText = "$hours:$minutes:$seconds 후 이용 가능";
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -163,22 +106,10 @@ class _LockerDetailWidgetState extends State<LockerDetailWidget> {
           SizedBox(
             width: double.infinity,
             height: 40,
-            child: ElevatedButton(
-              onPressed: _isButtonDisabled ? null : widget.onTapUse,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00B2FF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-              child: Text(
-                _countdownText ?? "이용하기",
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            child: UseButton(
+              releaseDate: widget.releaseDate,
+              isOverdue: widget.isOverdue,
+              onPressed: widget.onTapUse,
             ),
           ),
         ],

@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:umbrella/provider/user_provider.dart';
 import 'mock_api_interceptor.dart';
 import 'package:umbrella/screens/main_screen.dart';
-import 'auth_service.dart';
+import 'package:umbrella/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:umbrella/provider/user_provider.dart';
 
 class ApiService {
   final Dio _dio = Dio();
@@ -184,6 +186,45 @@ class ApiService {
     }
   }
 
+  /// ✅ 로그인 요청 → 성공 시 provider에 토큰 저장
+  Future<(bool, String)> loginUser(
+      BuildContext context, String id, String password) async {
+    developer.log("🚀 loginUser 진입");
+    try {
+      final response = await _dio.post('/login', data: {
+        "id": id,
+        "password": password,
+      });
+      developer.log("✅ Dio 응답 수신 완료");
+
+      if (response.statusCode == 200) {
+        final token = response.data['token'];
+        developer.log("✅ 토큰 추출 완료");
+        await context.read<UserProvider>().saveToken(token);
+        return (true, "로그인 성공");
+      } else {
+        return (false, "로그인 실패");
+      }
+    } on DioException catch (e) {
+      developer.log("❗ DioException 발생:");
+      final dynamic data = e.response?.data;
+      String errorMessage;
+
+      if (data is Map && data['message'] is String) {
+        errorMessage = data['message'];
+      } else if (e.message != null) {
+        errorMessage = e.message!;
+      } else {
+        errorMessage = "로그인 중 알 수 없는 오류가 발생했습니다.";
+      }
+
+      return (false, errorMessage);
+    } catch (e) {
+      developer.log("❗ 예기치 못한 오류 발생:");
+      return (false, "예기치 못한 오류: ${e.toString()}");
+    }
+  }
+
   Future<bool> changePw({
     required String tempToken,
     required String newPassword,
@@ -212,32 +253,6 @@ class ApiService {
       }
     } catch (e) {
       developer.log("[LOG] ❌ 비밀번호 변경 중 오류: $e");
-      return false;
-    }
-  }
-
-  /// ✅ 로그인 요청 → 성공 시 provider에 토큰 저장
-  Future<bool> loginUser(
-      BuildContext context, String id, String password) async {
-    try {
-      developer.log("[LOG] 🛠️ 로그인 요청 - 아이디: $id, 비밀번호: $password");
-
-      final response = await _dio.post(
-        '/login',
-        data: {"id": id, "password": password},
-      );
-
-      if (response.statusCode == 200) {
-        final token = response.data['token'];
-        // provider를 통해 토큰 저장 + 유저 정보 저장
-        await context.read<UserProvider>().saveToken(token);
-        return true;
-      } else {
-        developer.log("[LOG] ❌ 로그인 실패, 상태 코드: ${response.statusCode}");
-        return false;
-      }
-    } catch (e) {
-      developer.log("[LOG] ❌ 로그인 오류: $e");
       return false;
     }
   }
@@ -305,7 +320,7 @@ class ApiService {
         throw Exception('잘못된 응답입니다: ${response.statusCode}');
       }
     } catch (e) {
-      print("❌ fetchUmbrellaStatus 에러: $e");
+      developer.log("❌ fetchUmbrellaStatus 에러: $e");
       throw Exception("서버에서 우산 상태를 불러오는 데 실패했습니다.");
     }
   }
@@ -425,11 +440,15 @@ class ApiService {
       ),
     );
 
+    print('🛰 응답 상태코드: ${response.statusCode}');
+    print('📦 응답 데이터 타입: ${response.data.runtimeType}');
+    print('📦 응답 데이터 내용: ${response.data}');
+
     if (response.statusCode == 200) {
-      // 응답 데이터가 Map 형태인지 확인
       if (response.data is Map<String, dynamic>) {
-        print('response.data: ${response.data}');
         return response.data;
+      } else if (response.data is Map) {
+        return Map<String, dynamic>.from(response.data);
       } else {
         throw Exception('Unexpected response format: not a JSON object');
       }

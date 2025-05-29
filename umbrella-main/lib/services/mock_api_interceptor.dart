@@ -216,6 +216,11 @@ class MockApiInterceptor extends Interceptor {
       if (!_users.containsKey(id)) {
         handler.reject(DioException(
           requestOptions: options,
+          response: Response(
+            requestOptions: options,
+            statusCode: 400,
+            data: {"message": "아이디가 존재하지 않습니다."},
+          ),
           type: DioExceptionType.badResponse,
           message: "아이디가 존재하지 않습니다.",
         ));
@@ -225,12 +230,17 @@ class MockApiInterceptor extends Interceptor {
       if (_users[id]?["password"] != password) {
         handler.reject(DioException(
           requestOptions: options,
+          response: Response(
+            requestOptions: options,
+            statusCode: 401,
+            data: {"message": "비밀번호가 틀립니다."},
+          ),
           type: DioExceptionType.badResponse,
           message: "비밀번호가 틀립니다.",
         ));
+        developer.log("비밀번호가 틀립니다.");
         return;
       }
-
       final payload = {
         "id": _users[id]!["id"],
         "name": _users[id]!["name"],
@@ -250,6 +260,8 @@ class MockApiInterceptor extends Interceptor {
         statusCode: 200,
         data: {"message": "로그인 성공!", "token": mockToken},
       ));
+      print("로그인 성공! ${mockToken}");
+      return;
     } else if (path == '/profile') {
       final authHeader = options.headers['Authorization'];
       developer.log("[LOG] 🔐 Authorization header: $authHeader");
@@ -492,8 +504,10 @@ class MockApiInterceptor extends Interceptor {
       final payload = jsonDecode(
           utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
       final userId = payload['id'];
+      print("디코딩된 userId: $userId (${userId.runtimeType})");
 
-      if (userId == '20221317') {
+      if (userId.toString() == '20221317') {
+        print("✅ 연체된 사용자로 간주함");
         const releaseDateStr = "2025-06-20T23:59:59";
         final releaseDate = DateTime.parse(releaseDateStr);
 
