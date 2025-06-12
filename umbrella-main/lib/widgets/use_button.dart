@@ -96,13 +96,13 @@ class _UseButtonState extends State<UseButton> {
       height: 40,
       decoration: BoxDecoration(
         color: _isOverdue
-            ? const Color.fromARGB(255, 213, 213, 213)
+            ? const Color.fromARGB(255, 220, 220, 220)
             : const Color(0xFF00B2FF),
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.3),
-            offset: const Offset(0, 4), // 하단으로 그림자 이동
+            offset: const Offset(0, 3), // 하단으로 그림자 이동
             blurRadius: 6, // 그림자 퍼짐 정도
           ),
         ],
@@ -122,7 +122,7 @@ class _UseButtonState extends State<UseButton> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: _isOverdue ? Colors.black54 : Colors.white,
+              color: _isOverdue ? Colors.white : Colors.white,
             ),
           ),
         ),

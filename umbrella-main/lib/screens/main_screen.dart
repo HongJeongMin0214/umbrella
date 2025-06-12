@@ -433,11 +433,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           }
 
           // iOS는 세션 수동 종료 필요
-          NfcManager.instance.stopSession(alertMessage: '우산함 ID 읽기 성공');
+          NfcManager.instance.stopSession();
 
           onSuccess(lockerId);
         } catch (e) {
-          NfcManager.instance.stopSession(errorMessage: '우산함 ID 읽기 실패');
+          NfcManager.instance.stopSession();
           onError(e.toString());
         }
       },
@@ -631,6 +631,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 TileLayer(
                   urlTemplate:
                       'https://tile.jawg.io/jawg-streets/{z}/{x}/{y}{r}.png?access-token=bGF8wIhh0f3zbq7T7eRRr8VAWgK4jR0CtlUlJPHu2h5r4jbQ8b3SHdo7iwGLlMFT',
+                  retinaMode: true,
                   userAgentPackageName:
                       'com.example.app', // <- 이건 flutter_map에서 필수로 요구함
                   additionalOptions: const {
@@ -724,8 +725,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                             curve: Curves.easeInOut,
                           );
                           try {
-                            await fetchAndSetLockerStatus(
-                                locker.lockerId); // 최신 정보 fetch
+                            await fetchAndSetLockerStatus(locker.lockerId);
+                            // 최신 정보 fetch
                             if (!mounted) return;
 
                             // 우산 개수가 갱신된 후, 말풍선 표시 업데이트
@@ -868,54 +869,65 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget _buildNfcBottomSheetUI(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(15),
-      height: 450,
+      height: 400,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 45),
-          const Text(
-            "NFC 태그",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(width: 40),
-                Image.asset('lib/assets/tag.png', width: 160),
-              ],
+          const Text(
+            "Ready to Scan",
+            style: TextStyle(
+              fontSize: 25,
+              color: Colors.black45,
             ),
           ),
-          const SizedBox(height: 20),
-          const Text(
-            "휴대전화의 뒷면을 카드 리더기에 대세요.",
-            style: TextStyle(fontSize: 13, color: Colors.black),
+          const SizedBox(height: 25),
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.blue, width: 4),
+            ),
+            child: Center(
+              child: Image.asset(
+                'lib/assets/tag.png',
+                width: 50,
+                height: 50,
+              ),
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
+          const Text(
+            "Scan an NFC tag",
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          const SizedBox(height: 40),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 40),
             child: SizedBox(
               width: double.infinity,
-              height: 40,
+              height: 45,
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.grey[300],
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text("취소", style: TextStyle(color: Colors.black)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
         ],
       ),
     );
@@ -1126,7 +1138,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }).toList();
 
     return Positioned(
-      top: 100,
+      top: 116,
       left: 16,
       right: 16,
       child: Column(children: [
@@ -1488,9 +1500,10 @@ class LockerStatus {
 
   // 고정 위치 정보 Map
   static const Map<String, LockerMeta> _lockerMetaMap = {
-    'locker1': LockerMeta(36.77203, 126.9316, '미디어랩스'),
-    'locker2': LockerMeta(36.77150, 126.9320, '도서관 입구'),
-    // 필요한 만큼 추가 가능
+    'lockerA': LockerMeta(36.77203, 126.9316, '미디어랩스'),
+    'lockerB': LockerMeta(36.77150, 126.9320, '도서관 입구'),
+    'lockerC': LockerMeta(36.77000, 126.9330, '학생회관'),
+    'lockerD': LockerMeta(36.77300, 126.9300, '정문 옆'),
   };
 
   factory LockerStatus.fromJson(Map<String, dynamic> json) {

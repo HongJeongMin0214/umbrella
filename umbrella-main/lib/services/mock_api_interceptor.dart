@@ -134,7 +134,7 @@ class MockApiInterceptor extends Interceptor {
           message: "인증번호가 올바르지 않습니다.",
         ));
       }
-    } else if (path == '/register') {
+    } else if (path == '/users/register') {
       String? name = options.data?["name"];
       String? id = options.data?["id"];
       String? password = options.data?["password"];

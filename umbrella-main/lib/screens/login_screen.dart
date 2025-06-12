@@ -43,9 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
       developer.log("✅ 로그인 결과: $success / $message");
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.green),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text(message), backgroundColor: Colors.green),
+        // );
         context.go('/main');
       } else {
         setState(() {

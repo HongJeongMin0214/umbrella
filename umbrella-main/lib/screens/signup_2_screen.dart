@@ -19,7 +19,7 @@ class Signup2Screen extends StatefulWidget {
 
 class _Signup2ScreenState extends State<Signup2Screen> {
   final TextEditingController _codeController = TextEditingController();
-  int _remainingSeconds = 8;
+  int _remainingSeconds = 60;
   Timer? _timer;
   bool _isTimeOver = false;
   final RegExp _codeRegex = RegExp(r'^\d{6}$'); // 6자리 숫자 정규식
@@ -57,7 +57,7 @@ class _Signup2ScreenState extends State<Signup2Screen> {
   // 인증번호 재발송 함수
   void _resendCode() async {
     setState(() {
-      _remainingSeconds = 4;
+      _remainingSeconds = 60;
       _isTimeOver = false;
     });
     _startCountdown();

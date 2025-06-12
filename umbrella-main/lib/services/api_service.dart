@@ -11,17 +11,18 @@ import 'package:umbrella/provider/user_provider.dart';
 
 class ApiService {
   final Dio _dio = Dio();
-  final String baseUrl = 'https://mock-api.com';
+  //final String baseUrl = 'https://mock-api.com';
+  final String baseUrl = 'http://121.124.228.202:10000';
 
   ApiService() {
     _dio.options.baseUrl = baseUrl;
-    _dio.interceptors.add(MockApiInterceptor());
+    //_dio.interceptors.add(MockApiInterceptor());
   }
 
   Future<String> sendVerificationCode(
-      //string 반환
-      String email,
-      bool isPasswordReset) async {
+    String email,
+    bool isPasswordReset,
+  ) async {
     developer.log(
         "[LOG] 🛠️ 이메일 인증 요청 - 이메일: $email, 비밀번호 변경: $isPasswordReset",
         name: "log");
@@ -33,7 +34,15 @@ class ApiService {
         queryParameters: {
           "isPasswordReset": isPasswordReset.toString(),
         },
+        options: Options(
+          validateStatus: (status) {
+            // 200~499까지는 catch로 빠지지 않게 허용
+            return status != null && status >= 200 && status < 500;
+          },
+        ),
       );
+
+      developer.log("[LOG] 응답 상태 코드: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         return _handleSuccess(isPasswordReset);
@@ -45,10 +54,10 @@ class ApiService {
 
       return _handleError(response, "회원가입 이메일 인증 오류");
     } catch (e) {
+      developer.log("[LOG] ❌ catch 진입 - 예외: ${e.toString()}");
       if (e is DioException) {
         return _handleNetworkError(e);
       }
-      developer.log("[LOG] ❌ 예외 발생: ${e.toString()}");
       return "error";
     }
   }
@@ -166,9 +175,9 @@ class ApiService {
           "🛠️ 회원가입 요청 - 이름: $name, 아이디: $id, 비밀번호: $password, 이메일: $email",
           name: "log");
 
-      final response = await _dio.post('/register', data: {
+      final response = await _dio.post('/users/register', data: {
         "name": name,
-        "id": id,
+        "studentId": id,
         "password": password,
         "email": email,
         'deviceToken': deviceToken,
@@ -190,6 +199,10 @@ class ApiService {
   Future<(bool, String)> loginUser(
       BuildContext context, String id, String password) async {
     developer.log("🚀 loginUser 진입");
+
+    // 여기에 print 추가
+    print("로그인 요청: id: $id, password: $password");
+
     try {
       final response = await _dio.post('/login', data: {
         "id": id,
@@ -334,10 +347,11 @@ class ApiService {
       developer.log("[LOG] ❌ 사용자 토큰 없음");
       throw "로그인이 필요합니다.";
     }
-
+    developer
+        .log("[LOG] 📤 전송 준비: lockerId = $lockerId, userToken = $userToken");
     try {
       final response = await _dio.post(
-        '/locker-status', // 서버 엔드포인트
+        '/umbrella/user_check_availability', // 서버 엔드포인트
         options: Options(
           headers: {
             'Authorization': 'Bearer $userToken', // Bearer 토큰 추가
@@ -404,7 +418,7 @@ class ApiService {
   Future<Map<String, dynamic>> fetchLockerStatus(String lockerId) async {
     try {
       final response = await _dio.get(
-        '/locker/$lockerId/status',
+        '/umbrella/locker/$lockerId/status',
       );
       if (response.statusCode == 200) {
         return response.data;
@@ -417,8 +431,11 @@ class ApiService {
   }
 
   Future<List<LockerStatus>> fetchAllLockerStatuses() async {
+    developer.log('🔄 fetchAllLockerStatuses() 호출됨');
     try {
-      final response = await _dio.get('/lockers/status');
+      final response = await _dio.get('/umbrella/lockers/status');
+      developer.log('📡 응답 코드: ${response.statusCode}');
+      developer.log('📦 응답 데이터: ${response.data}');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((e) => LockerStatus.fromJson(e)).toList();
@@ -426,13 +443,14 @@ class ApiService {
         throw Exception("전체 우산함 상태 불러오기 실패");
       }
     } catch (e) {
+      developer.log('❌ 예외 발생: $e');
       rethrow;
     }
   }
 
   Future<Map<String, dynamic>> checkOverdueStatus(String token) async {
     final response = await _dio.get(
-      '/overdue',
+      '/umbrella/overdue',
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
